@@ -63,7 +63,7 @@
       .chip{ background: rgba(0,0,0,.18); }
     }
     .chipSelect select{
-      width: 220px;
+      width: 240px;
       padding: 6px 8px;
       border-radius: 10px;
       border:1px solid var(--line);
@@ -71,16 +71,6 @@
       color: var(--text);
       font-size: 12px;
       outline:none;
-    }
-    .chipSelect select:focus{
-      border-color: rgba(37,99,235,.75);
-      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-    }
-    @media (prefers-color-scheme: dark){
-      .chipSelect select:focus{
-        border-color: rgba(106,167,255,.8);
-        box-shadow: 0 0 0 3px rgba(106,167,255,.18);
-      }
     }
 
     .layout{
@@ -135,16 +125,6 @@
       resize: vertical;
       line-height: 1.5;
     }
-    input[type="text"]:focus, select:focus, textarea:focus{
-      border-color: rgba(37,99,235,.75);
-      box-shadow: 0 0 0 3px rgba(37,99,235,.15);
-    }
-    @media (prefers-color-scheme: dark){
-      input[type="text"]:focus, select:focus, textarea:focus{
-        border-color: rgba(106,167,255,.8);
-        box-shadow: 0 0 0 3px rgba(106,167,255,.18);
-      }
-    }
 
     .btn{
       display:inline-flex; align-items:center; justify-content:center;
@@ -162,7 +142,6 @@
     @media (prefers-color-scheme: dark){
       .btn{ background: rgba(255,255,255,.06); }
     }
-    .btn:hover{ filter: brightness(1.02); }
     .btn.primary{
       background: linear-gradient(180deg, var(--primary), var(--primary2));
       border-color: rgba(0,0,0,.0);
@@ -206,7 +185,6 @@
     @media (prefers-color-scheme: dark){
       .sceneItem{ background: rgba(255,255,255,.06); }
     }
-    .sceneItem:hover{ filter: brightness(1.02); }
     .sceneItem.active{
       border-color: rgba(37,99,235,.55);
       box-shadow: 0 0 0 3px rgba(37,99,235,.10);
@@ -223,7 +201,7 @@
       width:10px; height:10px; border-radius:999px; margin-top: 4px;
       border:1px solid var(--line);
       background: transparent;
-      flex: none;
+      flex:none;
     }
     .dot.draft{ background: rgba(234,179,8,.95); border-color: rgba(234,179,8,.25); }
     @media (prefers-color-scheme: dark){
@@ -298,12 +276,12 @@
         <h1>プロンプト合体</h1>
         <div class="sub">
           <span class="chip">Ctrl+Enter：合体してコピー</span>
-          <span class="chip">Ctrl+S：保存（シーン/固定は入力欄で自動切替）</span>
-          <span class="chip">Ctrl+Shift+S：名前を付けて保存</span>
+          <span class="chip">Ctrl+S：保存/更新（フォーカスでシーン/固定を判定）</span>
+          <span class="chip">Ctrl+Shift+S：名前付き保存/複製</span>
 
           <span class="chip chipSelect">
             固定プリセット：
-            <select id="fixedSelect" aria-label="固定プリセット選択"></select>
+            <select id="fixedSelect"></select>
           </span>
 
           <button class="btn small" id="openFixed">固定を編集</button>
@@ -318,7 +296,7 @@
 
     <div class="layout">
       <!-- Left: Scene Library -->
-      <section class="panel" aria-label="シーンライブラリ">
+      <section class="panel">
         <div class="panelHead">
           <div class="panelTitle">シーン一覧</div>
           <div class="statusLine">
@@ -332,7 +310,7 @@
           </div>
 
           <div class="hint" style="margin-top:6px;">
-            選ぶ → 右の欄に即反映。編集内容は<strong>下書きとして自動退避</strong>されます（消えません）。
+            保存対象は<strong>ID固定</strong>。並び替えで位置が変わっても別シーンに上書きされません。
           </div>
 
           <div class="list" id="sceneList" style="margin-top:10px;"></div>
@@ -345,31 +323,31 @@
       </section>
 
       <!-- Right: Scene Editor -->
-      <section class="panel" aria-label="シーン編集">
+      <section class="panel">
         <div class="panelHead">
           <div class="panelTitle">編集</div>
           <div class="statusLine">
-            <span class="badge" id="currentName">新規</span>
-            <span class="badge warn" id="dirtyBadge" style="display:none;">未保存（下書き）</span>
+            <span class="badge" id="currentSceneName">新規</span>
+            <span class="badge warn" id="sceneDirtyBadge" style="display:none;">未保存（下書き）</span>
           </div>
         </div>
         <div class="panelBody">
           <div class="row">
-            <button class="btn ok" id="save">保存</button>
-            <button class="btn" id="saveAs">名前を付けて保存</button>
-            <button class="btn" id="revert" style="display:none;">保存済みに戻す</button>
-            <button class="btn" id="clearSceneInput">シーン入力をクリア</button>
+            <button class="btn ok" id="sceneSave">保存</button>
+            <button class="btn" id="sceneSaveAs">名前を付けて保存</button>
+            <button class="btn" id="sceneRevert" style="display:none;">保存済みに戻す</button>
+            <button class="btn" id="sceneClear">シーン入力をクリア</button>
           </div>
 
-          <textarea id="scene" placeholder="シーンプロンプトを貼り付け（ここが作業の中心）"></textarea>
+          <textarea id="scene" placeholder="シーンプロンプト（編集対象）"></textarea>
 
           <div class="row" style="margin-top:10px;">
-            <button class="btn primary" id="mergeCopy2" style="flex:1; justify-content:center;">合体してコピー</button>
+            <button class="btn primary" id="mergeCopy2" style="flex:1;">合体してコピー</button>
             <button class="btn" id="showOutput">合体結果を開く</button>
           </div>
 
           <div class="hint">
-            メイン動線は「貼る → 合体してコピー」。保存・設定・固定編集は必要なときだけ。
+            既存を編集したら「更新」。既存を別名で残すなら「複製して保存」。
           </div>
         </div>
       </section>
@@ -384,9 +362,7 @@
           <button class="btn" id="copyOutput">この欄をコピー</button>
         </div>
         <textarea id="output" style="min-height:220px; margin-top:10px;" placeholder="合体結果がここに表示されます"></textarea>
-        <div class="hint">
-          ※ 自動コピーが失敗する環境では、この欄を開いて Ctrl+C でコピーできます。
-        </div>
+        <div class="hint">※ 自動コピーが失敗する場合は、この欄を開いて Ctrl+C でコピーできます。</div>
       </div>
     </details>
 
@@ -402,22 +378,20 @@
         </div>
 
         <div class="row" style="margin-top:8px;">
-          <button class="btn ok" id="fixedSave">固定を保存</button>
-          <button class="btn" id="fixedSaveAs">固定を名前を付けて保存</button>
+          <button class="btn ok" id="fixedSave">保存</button>
+          <button class="btn" id="fixedSaveAs">複製して保存</button>
           <button class="btn" id="fixedRevert" style="display:none;">保存済みに戻す</button>
           <button class="btn" id="fixedClear">固定入力をクリア</button>
         </div>
 
-        <textarea id="fixed" style="min-height:220px; margin-top:10px;" placeholder="固定プロンプト（キャラ固定・画風固定など）"></textarea>
+        <textarea id="fixed" style="min-height:220px; margin-top:10px;" placeholder="固定プロンプト"></textarea>
 
         <div class="dangerZone">
           <button class="btn danger" id="fixedDelete">この固定プリセットを削除</button>
           <span class="hint" style="margin:0;">※ 最後の1件は削除できません</span>
         </div>
 
-        <div class="hint">
-          上の「固定プリセット」ドロップダウンで切替できます。切替しても編集内容は下書きとして保持されます。
-        </div>
+        <div class="hint">固定も：編集したら「更新」、別名で残すなら「複製して保存」。</div>
       </div>
     </details>
 
@@ -439,7 +413,7 @@
         <div class="row">
           <label class="row" style="gap:8px; color:var(--muted); font-size:12px;">
             <input type="checkbox" id="trim" checked />
-            空白を整理して合体する（先頭は保持・末尾のみ整理）
+            空白を整理して合体する（先頭は保持・行末のスペース/タブのみ）
           </label>
         </div>
 
@@ -463,9 +437,10 @@
     const search = $("search");
     const sceneList = $("sceneList");
     const sceneCount = $("sceneCount");
-    const currentNameBadge = $("currentName");
-    const dirtyBadge = $("dirtyBadge");
     const deleteSceneBtn = $("deleteScene");
+
+    const currentSceneNameBadge = $("currentSceneName");
+    const sceneDirtyBadge = $("sceneDirtyBadge");
 
     const scene = $("scene");
     const fixed = $("fixed");
@@ -485,23 +460,36 @@
 
     const toast = $("toast");
 
-    // ---- Storage keys: Scene ----
-    const LS_SCENE_LIB = "pm_scene_library_v3";            // { name: {text, updatedAt} }
-    const LS_SCENE_SELECTED = "pm_selected_scene_name_v3"; // string
-    const LS_SCENE_DRAFT_NEW = "pm_draft_new_v3";
-    const LS_SCENE_DRAFT_PREFIX = "pm_draft_scene_v3_";    // + encodeURIComponent(name)
+    // ---- Keys (Scene: ID-based DB) ----
+    const LS_SCENE_DB = "pm_scene_db_v1";                 // {version:1, scenes:[{id,name,text,createdAt,updatedAt}]}
+    const LS_SCENE_SELECTED_ID = "pm_scene_selected_id_v1";
+    const LS_SCENE_DRAFT_NEW = "pm_scene_draft_new_v1";   // draft for new
+    const LS_SCENE_DRAFT_PREFIX = "pm_scene_draft_v1_";   // + id
+    const LS_SCENE_MIGRATED = "pm_scene_db_v1_migrated";  // "1"
 
-    // ---- Storage keys: Fixed presets ----
+    // ---- Keys (old scene libs for migration) ----
+    const OLD_SCENE_LIB_KEYS = ["pm_scene_library_v3", "pm_scene_library_v2", "pm_scene_library_v1"];
+    const OLD_SELECTED_NAME_KEYS = ["pm_selected_scene_name_v3", "pm_selected_scene_name_v2", "pm_selected_scene_name_v1"];
+
+    // ---- Keys (Fixed presets) ----
     const LS_FIXED_LIB = "pm_fixed_library_v1";            // { name: {text, updatedAt} }
     const LS_FIXED_SELECTED = "pm_selected_fixed_name_v1"; // string
     const LS_FIXED_DRAFT_PREFIX = "pm_draft_fixed_v1_";    // + encodeURIComponent(name)
-
-    // (migration from older single-fixed key)
     const LS_OLD_FIXED_SINGLE = "pm_fixed_v3";
 
-    // ---- State ----
-    let currentSceneName = ""; // "" => 新規（未保存）
-    let currentFixedName = ""; // 常にどれか選択（なければ作る）
+    // ---- State (Scene) ----
+    let currentSceneId = null;     // null => new
+    let boundSceneId = null;       // what textarea is currently bound to
+    let switchingScene = false;
+    let switchingFromSceneId = null;
+
+    // ---- State (Fixed) ----
+    let currentFixedName = "";
+    let boundFixedName = "";
+    let switchingFixed = false;
+    let switchingFromFixedName = "";
+
+    // ---- Output ----
     let lastMerged = "";
 
     // ---- Utils ----
@@ -512,25 +500,22 @@
     }
     function nowISO(){ return new Date().toISOString(); }
 
-    function toLF(s){
-      // Windows CRLF / old Mac CR を LF に統一（行欠落系の事故予防）
-      return (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    function uuid(){
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
     }
 
-    // ★重要：先頭は触らず、末尾だけ整える（先頭行が消える事故を防止）
-function normalizeForMerge(s){
-  const t = (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  if (!trim.checked) return t;
+    function toLF(s){ return (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n"); }
 
-  // 先頭は絶対に触らない（= 1行目が消える事故を防ぐ）
-  // 行末の半角スペース/タブだけ除去（安全）
-  return t
-    .split("\n")
-    .map(line => line.replace(/[ \t]+$/g, ""))
-    .join("\n");
-}
-
-
+    // 空白整理ONでも「先頭」や「行そのもの」を消さない安全版
+    function normalizeForMerge(s){
+      const t = toLF(s);
+      if (!trim.checked) return t;
+      return t
+        .split("\n")
+        .map(line => line.replace(/[ \t]+$/g, "")) // 行末のみ
+        .join("\n");
+    }
 
     function getDivider(){
       const v = dividerPreset.value;
@@ -576,202 +561,427 @@ function normalizeForMerge(s){
       return `${y}-${m}-${day} ${hh}:${mm}`;
     }
 
+    // ★連番命名：サンプル / サンプル（2） / サンプル（3）...
+    // 既に（n）や(n)で終わっていたら、その次から
+    function uniqueName(existingSet, desired){
+      let name = (desired ?? "").trim();
+      if (!name) name = "scene";
+
+      if (!existingSet.has(name)) return name;
+
+      let base = name;
+      let start = 2;
+
+      const m = name.match(/^(.*?)[（(](\d+)[）)]$/);
+      if (m){
+        base = (m[1] ?? "").trim() || name;
+        const n = parseInt(m[2], 10);
+        start = Number.isFinite(n) ? Math.max(2, n + 1) : 2;
+      }
+
+      for (let i = start; i < 10000; i++){
+        const cand = `${base}（${i}）`;
+        if (!existingSet.has(cand)) return cand;
+      }
+      return `${base}（${Date.now()}）`;
+    }
+
     // =========================
-    // Scene Library + Drafts
+    // Scene DB (ID-based)
     // =========================
-    function readSceneLib(){
+    function emptySceneDB(){ return { version: 1, scenes: [] }; }
+
+    function readSceneDB(){
       try{
-        const raw = localStorage.getItem(LS_SCENE_LIB);
-        if (!raw) return {};
+        const raw = localStorage.getItem(LS_SCENE_DB);
+        if (!raw) return emptySceneDB();
         const obj = JSON.parse(raw);
-        return (obj && typeof obj === "object") ? obj : {};
-      } catch { return {}; }
+        if (!obj || typeof obj !== "object") return emptySceneDB();
+        if (!Array.isArray(obj.scenes)) return emptySceneDB();
+        return { version: 1, scenes: obj.scenes };
+      } catch {
+        return emptySceneDB();
+      }
     }
-    function writeSceneLib(lib){
-      localStorage.setItem(LS_SCENE_LIB, JSON.stringify(lib));
+
+    function writeSceneDB(db){
+      localStorage.setItem(LS_SCENE_DB, JSON.stringify({ version: 1, scenes: db.scenes }));
     }
-    function sceneDraftKey(name){
-      return LS_SCENE_DRAFT_PREFIX + encodeURIComponent(name);
+
+    function sceneDraftKey(id){
+      return id ? (LS_SCENE_DRAFT_PREFIX + id) : LS_SCENE_DRAFT_NEW;
     }
-    // ★null = 下書きなし / "" = 空の下書きあり（区別する）
-    function getSceneDraftRaw(name){
-      if (!name) return localStorage.getItem(LS_SCENE_DRAFT_NEW);
-      return localStorage.getItem(sceneDraftKey(name));
+    function getSceneDraftRaw(id){
+      return localStorage.getItem(sceneDraftKey(id)); // null or string
     }
-    function setSceneDraft(name, text){
-      if (!name) localStorage.setItem(LS_SCENE_DRAFT_NEW, text ?? "");
-      else localStorage.setItem(sceneDraftKey(name), text ?? "");
+    function setSceneDraft(id, text){
+      localStorage.setItem(sceneDraftKey(id), text ?? "");
     }
-    function clearSceneDraft(name){
-      if (!name) localStorage.removeItem(LS_SCENE_DRAFT_NEW);
-      else localStorage.removeItem(sceneDraftKey(name));
+    function clearSceneDraft(id){
+      localStorage.removeItem(sceneDraftKey(id));
     }
-    function getSceneSavedText(name){
-      const lib = readSceneLib();
-      return lib[name]?.text ?? "";
+
+    function findSceneById(db, id){
+      return db.scenes.find(s => s.id === id) || null;
     }
-    function sceneHasDirtyDraft(name){
-      const saved = getSceneSavedText(name);
-      const draft = getSceneDraftRaw(name);
+
+    function migrateOldScenesIfNeeded(){
+      const migrated = localStorage.getItem(LS_SCENE_MIGRATED) === "1";
+      const db = readSceneDB();
+      if (migrated || db.scenes.length > 0) return;
+
+      let imported = 0;
+      const existingNames = new Set();
+      const newScenes = [];
+
+      for (const key of OLD_SCENE_LIB_KEYS){
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        try{
+          const lib = JSON.parse(raw);
+          if (!lib || typeof lib !== "object") continue;
+
+          for (const [name0, payload] of Object.entries(lib)){
+            const baseName = String(name0);
+            const name = uniqueName(existingNames, baseName);
+            existingNames.add(name);
+
+            const text = String(payload?.text ?? "");
+            const updatedAt = String(payload?.updatedAt ?? nowISO());
+            const createdAt = String(payload?.createdAt ?? updatedAt);
+
+            newScenes.push({
+              id: uuid(),
+              name,
+              text,
+              createdAt,
+              updatedAt
+            });
+            imported++;
+          }
+        } catch {}
+      }
+
+      if (imported > 0){
+        db.scenes = newScenes;
+        writeSceneDB(db);
+
+        // migrate selection by name (best-effort)
+        let oldSelectedName = "";
+        for (const k of OLD_SELECTED_NAME_KEYS){
+          const v = localStorage.getItem(k);
+          if (v) { oldSelectedName = v; break; }
+        }
+        if (oldSelectedName){
+          const hit = db.scenes.find(s => s.name === oldSelectedName);
+          if (hit) localStorage.setItem(LS_SCENE_SELECTED_ID, hit.id);
+        }
+
+        showToast(`旧データを移行しました（${imported}件）`);
+      }
+
+      localStorage.setItem(LS_SCENE_MIGRATED, "1");
+    }
+
+    function sceneHasDirtyDraft(db, id){
+      const s = findSceneById(db, id);
+      if (!s) return false;
+      const saved = s.text ?? "";
+      const draft = getSceneDraftRaw(id);
       return draft !== null && draft !== saved;
     }
-    function sortedSceneNames(lib, filterText){
-      const q = (filterText ?? "").trim().toLowerCase();
-      const names = Object.keys(lib).filter(n => n.toLowerCase().includes(q));
-      return names.sort((a,b)=>{
-        const ua = lib[a]?.updatedAt ?? "";
-        const ub = lib[b]?.updatedAt ?? "";
+
+    function sortedFilteredScenes(db, q){
+      const query = (q ?? "").trim().toLowerCase();
+      let list = db.scenes.slice();
+      if (query){
+        list = list.filter(s => (s.name ?? "").toLowerCase().includes(query));
+      }
+      list.sort((a,b)=>{
+        const ua = a.updatedAt ?? "";
+        const ub = b.updatedAt ?? "";
         if (ua !== ub) return ua < ub ? 1 : -1;
-        return a.localeCompare(b, "ja");
+        return (a.name ?? "").localeCompare((b.name ?? ""), "ja");
+      });
+      return list;
+    }
+
+    let renderScheduled = false;
+    function scheduleRenderSceneList(){
+      if (renderScheduled) return;
+      renderScheduled = true;
+      requestAnimationFrame(() => {
+        renderScheduled = false;
+        renderSceneList();
       });
     }
+
     function renderSceneList(){
-      const lib = readSceneLib();
-      const names = sortedSceneNames(lib, search.value);
+      const db = readSceneDB();
+      const items = sortedFilteredScenes(db, search.value);
+
       sceneList.innerHTML = "";
 
-      for (const name of names){
-        const item = document.createElement("button");
-        item.className = "sceneItem" + (name === currentSceneName ? " active" : "");
-        item.type = "button";
+      for (const s of items){
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sceneItem" + ((s.id === currentSceneId) ? " active" : "");
+        btn.dataset.id = s.id;
 
         const left = document.createElement("div");
         const title = document.createElement("div");
         title.className = "sceneName";
-        title.textContent = name;
+        title.textContent = s.name ?? "(no name)";
 
         const meta = document.createElement("div");
         meta.className = "sceneMeta";
-        meta.textContent = "更新: " + formatUpdated(lib[name]?.updatedAt);
+        meta.textContent = "更新: " + formatUpdated(s.updatedAt);
 
         left.appendChild(title);
         left.appendChild(meta);
 
         const dot = document.createElement("div");
-        dot.className = "dot" + (sceneHasDirtyDraft(name) ? " draft" : "");
-        dot.title = sceneHasDirtyDraft(name) ? "未保存の下書きあり" : "";
+        dot.className = "dot" + (sceneHasDirtyDraft(db, s.id) ? " draft" : "");
+        dot.title = sceneHasDirtyDraft(db, s.id) ? "未保存の下書きあり" : "";
 
-        item.appendChild(left);
-        item.appendChild(dot);
+        btn.appendChild(left);
+        btn.appendChild(dot);
 
-        item.addEventListener("click", () => selectScene(name));
-        sceneList.appendChild(item);
+        btn.addEventListener("click", () => selectSceneById(s.id));
+        sceneList.appendChild(btn);
       }
 
-      sceneCount.textContent = `${Object.keys(lib).length}件`;
-      deleteSceneBtn.disabled = !currentSceneName;
+      sceneCount.textContent = `${db.scenes.length}件`;
+      deleteSceneBtn.disabled = (currentSceneId === null);
     }
 
-    function updateSceneDirtyUI(){
-      if (!currentSceneName){
+    function bindSceneEditorTo(id){
+      boundSceneId = id;
+      scene.dataset.boundSceneId = (id ?? "");
+    }
+
+    function loadSceneText(db, id){
+      if (id === null){
+        const draft = getSceneDraftRaw(null);
+        return (draft !== null) ? draft : "";
+      }
+      const draft = getSceneDraftRaw(id);
+      if (draft !== null) return draft;
+      const s = findSceneById(db, id);
+      return s ? (s.text ?? "") : "";
+    }
+
+    function updateSceneUI(){
+      const db = readSceneDB();
+      const saveBtn = $("sceneSave");
+      const saveAsBtn = $("sceneSaveAs");
+
+      if (currentSceneId === null){
+        currentSceneNameBadge.textContent = "新規";
         const hasText = (scene.value ?? "").length > 0;
-        dirtyBadge.style.display = hasText ? "inline-flex" : "none";
-        $("revert").style.display = "none";
-        currentNameBadge.textContent = "新規";
+        sceneDirtyBadge.style.display = hasText ? "inline-flex" : "none";
+        $("sceneRevert").style.display = "none";
+        deleteSceneBtn.disabled = true;
+
+        // ラベル
+        saveBtn.textContent = "保存";
+        saveAsBtn.textContent = "名前を付けて保存";
         return;
       }
-      const saved = getSceneSavedText(currentSceneName);
+
+      const s = findSceneById(db, currentSceneId);
+      currentSceneNameBadge.textContent = s?.name ?? "（不明）";
+
+      const saved = s?.text ?? "";
       const dirty = (scene.value ?? "") !== saved;
-      dirtyBadge.style.display = dirty ? "inline-flex" : "none";
-      $("revert").style.display = dirty ? "inline-flex" : "none";
-      currentNameBadge.textContent = currentSceneName;
+
+      sceneDirtyBadge.style.display = dirty ? "inline-flex" : "none";
+      $("sceneRevert").style.display = dirty ? "inline-flex" : "none";
+      deleteSceneBtn.disabled = false;
+
+      // ラベル：編集していたら「更新」
+      saveBtn.textContent = dirty ? "更新" : "保存";
+      // 既存を開いているなら「複製して保存」
+      saveAsBtn.textContent = "複製して保存";
     }
 
-    function selectScene(name){
-      currentSceneName = name;
-      localStorage.setItem(LS_SCENE_SELECTED, name);
+    function commitSceneDraftForBound(){
+      const id = boundSceneId;
+      setSceneDraft(id, scene.value ?? "");
+    }
 
-      const draft = getSceneDraftRaw(name);
-      scene.value = (draft !== null) ? draft : getSceneSavedText(name);
+    function selectSceneById(id){
+      if (switchingScene) return;
 
-      updateSceneDirtyUI();
-      renderSceneList();
-      showToast("シーンを呼び出しました");
+      commitSceneDraftForBound();
+
+      switchingScene = true;
+      switchingFromSceneId = boundSceneId;
+
+      const db = readSceneDB();
+      currentSceneId = id;
+      localStorage.setItem(LS_SCENE_SELECTED_ID, id);
+
+      scene.value = loadSceneText(db, id);
+
+      requestAnimationFrame(() => {
+        bindSceneEditorTo(id);
+        switchingScene = false;
+        switchingFromSceneId = null;
+        updateSceneUI();
+        scheduleRenderSceneList();
+        showToast("シーンを呼び出しました");
+      });
     }
 
     function newScene(){
-      currentSceneName = "";
-      localStorage.setItem(LS_SCENE_SELECTED, "");
-      const draft = getSceneDraftRaw("");
-      scene.value = (draft !== null) ? draft : "";
-      updateSceneDirtyUI();
-      renderSceneList();
-      showToast("新規シーン");
+      if (switchingScene) return;
+
+      commitSceneDraftForBound();
+
+      switchingScene = true;
+      switchingFromSceneId = boundSceneId;
+
+      currentSceneId = null;
+      localStorage.setItem(LS_SCENE_SELECTED_ID, "");
+
+      const db = readSceneDB();
+      scene.value = loadSceneText(db, null);
+
+      requestAnimationFrame(() => {
+        bindSceneEditorTo(null);
+        switchingScene = false;
+        switchingFromSceneId = null;
+        updateSceneUI();
+        scheduleRenderSceneList();
+        showToast("新規シーン");
+      });
     }
 
-    function saveSceneToCurrent(){
-      if (!currentSceneName){
-        saveSceneAsFlow();
+    function saveScene(){
+      if (switchingScene) { showToast("切替中のため少し待ってください"); return; }
+
+      const db = readSceneDB();
+
+      // 新規は「保存」= 名前を聞いて保存
+      if (currentSceneId === null){
+        saveSceneAs(); // 名前を付けて保存
         return;
       }
-      const lib = readSceneLib();
-      lib[currentSceneName] = { text: scene.value ?? "", updatedAt: nowISO() };
-      writeSceneLib(lib);
-      clearSceneDraft(currentSceneName);
-      updateSceneDirtyUI();
-      renderSceneList();
-      showToast("保存しました");
-    }
 
-    function saveSceneAsFlow(){
-      const lib = readSceneLib();
-      const suggestion = currentSceneName || "";
-      const name = (prompt("保存名を入力してください（シーン）", suggestion) ?? "").trim();
-      if (!name){ showToast("キャンセル"); return; }
+      const s = findSceneById(db, currentSceneId);
+      if (!s){ showToast("保存対象が見つかりません"); return; }
 
-      const exists = !!lib[name];
-      if (exists){
-        const ok = confirm(`「${name}」は既にあります。上書きしますか？`);
-        if (!ok){ showToast("キャンセル"); return; }
+      const nextText = scene.value ?? "";
+      const prevText = s.text ?? "";
+
+      // ★変更がないなら更新日時を変えない（勝手に先頭へ行かない）
+      if (nextText === prevText){
+        clearSceneDraft(currentSceneId);
+        updateSceneUI();
+        scheduleRenderSceneList();
+        showToast("変更なし");
+        return;
       }
 
-      lib[name] = { text: scene.value ?? "", updatedAt: nowISO() };
-      writeSceneLib(lib);
+      // ✅ IDで特定した1件だけ更新
+      s.text = nextText;
+      s.updatedAt = nowISO();
 
-      currentSceneName = name;
-      localStorage.setItem(LS_SCENE_SELECTED, name);
+      writeSceneDB(db);
+      clearSceneDraft(currentSceneId);
 
-      clearSceneDraft(name);
-      // 新規下書きは残しても良いが、誤復元を防ぐなら消す
-      // clearSceneDraft("");
-
-      updateSceneDirtyUI();
-      renderSceneList();
-      showToast(exists ? "上書き保存しました" : "名前を付けて保存しました");
+      updateSceneUI();
+      scheduleRenderSceneList();
+      showToast("更新しました");
     }
 
-    function revertSceneToSaved(){
-      if (!currentSceneName) return;
-      scene.value = getSceneSavedText(currentSceneName);
-      clearSceneDraft(currentSceneName);
-      updateSceneDirtyUI();
-      renderSceneList();
+    function saveSceneAs(){
+      if (switchingScene) { showToast("切替中のため少し待ってください"); return; }
+
+      const db = readSceneDB();
+      const existingNames = new Set(db.scenes.map(s => s.name));
+
+      const suggestion =
+        (currentSceneId !== null)
+          ? (findSceneById(db, currentSceneId)?.name ?? "")
+          : "";
+
+      const name0 = (prompt("保存名を入力してください（シーン）", suggestion) ?? "").trim();
+      if (!name0){ showToast("キャンセル"); return; }
+
+      // ★同名なら必ず連番で“新規”を作る（上書きしない）
+      const finalName = uniqueName(existingNames, name0);
+
+      const id = uuid();
+      db.scenes.push({
+        id,
+        name: finalName,
+        text: scene.value ?? "",
+        createdAt: nowISO(),
+        updatedAt: nowISO()
+      });
+
+      writeSceneDB(db);
+      clearSceneDraft(null);
+
+      currentSceneId = id;
+      localStorage.setItem(LS_SCENE_SELECTED_ID, id);
+      bindSceneEditorTo(id);
+
+      updateSceneUI();
+      scheduleRenderSceneList();
+
+      if (finalName !== name0) showToast(`「${finalName}」として複製しました`);
+      else showToast("名前を付けて保存しました");
+    }
+
+    function revertScene(){
+      const db = readSceneDB();
+      if (currentSceneId === null) return;
+      const s = findSceneById(db, currentSceneId);
+      if (!s) return;
+
+      scene.value = s.text ?? "";
+      clearSceneDraft(currentSceneId);
+      updateSceneUI();
+      scheduleRenderSceneList();
       showToast("保存済みに戻しました");
     }
 
-    function deleteCurrentScene(){
-      if (!currentSceneName) return;
-      const ok = confirm(`「${currentSceneName}」を削除しますか？（元に戻せません）`);
+    function deleteScene(){
+      const db = readSceneDB();
+      if (currentSceneId === null) return;
+      const s = findSceneById(db, currentSceneId);
+      if (!s) return;
+
+      const ok = confirm(`「${s.name}」を削除しますか？（元に戻せません）`);
       if (!ok) return;
 
-      const lib = readSceneLib();
-      delete lib[currentSceneName];
-      writeSceneLib(lib);
+      db.scenes = db.scenes.filter(x => x.id !== currentSceneId);
+      writeSceneDB(db);
+      clearSceneDraft(currentSceneId);
 
-      clearSceneDraft(currentSceneName);
-      currentSceneName = "";
-      localStorage.setItem(LS_SCENE_SELECTED, "");
+      currentSceneId = null;
+      localStorage.setItem(LS_SCENE_SELECTED_ID, "");
+      bindSceneEditorTo(null);
 
-      const draft = getSceneDraftRaw("");
-      scene.value = (draft !== null) ? draft : "";
-
-      updateSceneDirtyUI();
-      renderSceneList();
+      scene.value = loadSceneText(db, null);
+      updateSceneUI();
+      scheduleRenderSceneList();
       showToast("削除しました");
     }
 
+    // Input -> draft (with switching guard)
+    scene.addEventListener("input", () => {
+      const targetId = switchingScene ? switchingFromSceneId : boundSceneId;
+      setSceneDraft(targetId, scene.value ?? "");
+      updateSceneUI();
+      scheduleRenderSceneList();
+    });
+
     // =========================
-    // Fixed Presets + Drafts
+    // Fixed Presets (name based)
     // =========================
     function readFixedLib(){
       try{
@@ -788,22 +998,13 @@ function normalizeForMerge(s){
       return LS_FIXED_DRAFT_PREFIX + encodeURIComponent(name);
     }
     function getFixedDraftRaw(name){
-      return localStorage.getItem(fixedDraftKey(name)); // null or string
+      return localStorage.getItem(fixedDraftKey(name));
     }
     function setFixedDraft(name, text){
       localStorage.setItem(fixedDraftKey(name), text ?? "");
     }
     function clearFixedDraft(name){
       localStorage.removeItem(fixedDraftKey(name));
-    }
-    function getFixedSavedText(name){
-      const lib = readFixedLib();
-      return lib[name]?.text ?? "";
-    }
-    function fixedHasDirtyDraft(name){
-      const saved = getFixedSavedText(name);
-      const draft = getFixedDraftRaw(name);
-      return draft !== null && draft !== saved;
     }
     function sortedFixedNames(lib){
       return Object.keys(lib).sort((a,b)=>{
@@ -813,121 +1014,139 @@ function normalizeForMerge(s){
         return a.localeCompare(b, "ja");
       });
     }
+    function ensureFixedDefault(){
+      const lib = readFixedLib();
+      if (Object.keys(lib).length > 0) return;
+
+      const old = localStorage.getItem(LS_OLD_FIXED_SINGLE) ?? "";
+      lib["デフォルト"] = { text: old, updatedAt: nowISO() };
+      writeFixedLib(lib);
+      localStorage.setItem(LS_FIXED_SELECTED, "デフォルト");
+    }
     function renderFixedSelect(){
       const lib = readFixedLib();
       const names = sortedFixedNames(lib);
 
       fixedSelect.innerHTML = "";
-      for (const name of names){
+      for (const n of names){
         const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
+        opt.value = n;
+        opt.textContent = n;
         fixedSelect.appendChild(opt);
       }
 
       if (!names.includes(currentFixedName)){
-        currentFixedName = names[0] || "";
-        if (currentFixedName) localStorage.setItem(LS_FIXED_SELECTED, currentFixedName);
+        currentFixedName = names[0] || "デフォルト";
       }
       fixedSelect.value = currentFixedName;
-      updateFixedDirtyUI();
+      updateFixedUI();
     }
-
-    function updateFixedDirtyUI(){
-      fixedCurrentNameBadge.textContent = currentFixedName || "—";
-      if (!currentFixedName){
-        fixedDirtyBadge.style.display = "none";
-        $("fixedRevert").style.display = "none";
-        fixedDeleteBtn.disabled = true;
-        return;
-      }
-      const saved = getFixedSavedText(currentFixedName);
+    function bindFixedEditorTo(name){
+      boundFixedName = name;
+      fixed.dataset.boundFixedName = name;
+    }
+    function loadFixedText(name){
+      const lib = readFixedLib();
+      const draft = getFixedDraftRaw(name);
+      if (draft !== null) return draft;
+      return String(lib[name]?.text ?? "");
+    }
+    function updateFixedUI(){
+      const lib = readFixedLib();
+      const saved = String(lib[currentFixedName]?.text ?? "");
       const dirty = (fixed.value ?? "") !== saved;
+
+      fixedCurrentNameBadge.textContent = currentFixedName || "—";
       fixedDirtyBadge.style.display = dirty ? "inline-flex" : "none";
       $("fixedRevert").style.display = dirty ? "inline-flex" : "none";
 
-      const lib = readFixedLib();
+      // ラベル：編集していたら「更新」
+      $("fixedSave").textContent = dirty ? "更新" : "保存";
+      // 固定は常に既存プリセットなので、常に「複製して保存」
+      $("fixedSaveAs").textContent = "複製して保存";
+
       const count = Object.keys(lib).length;
       fixedDeleteBtn.disabled = (count <= 1);
     }
-
+    function commitFixedDraftForBound(){
+      if (!boundFixedName) return;
+      setFixedDraft(boundFixedName, fixed.value ?? "");
+    }
     function selectFixed(name){
-      if (!name) return;
-      currentFixedName = name;
-      localStorage.setItem(LS_FIXED_SELECTED, name);
+      if (!name || switchingFixed) return;
 
-      const draft = getFixedDraftRaw(name);
-      fixed.value = (draft !== null) ? draft : getFixedSavedText(name);
-
-      renderFixedSelect(); // selection + UI update
-      showToast("固定プリセットを切替");
-    }
-
-    function ensureFixedDefault(){
-      const lib = readFixedLib();
-      if (Object.keys(lib).length > 0) return;
-
-      // migrate from older single fixed if exists
-      const old = localStorage.getItem(LS_OLD_FIXED_SINGLE) ?? "";
-
-      const defaultName = "デフォルト";
-      lib[defaultName] = { text: old, updatedAt: nowISO() };
-      writeFixedLib(lib);
-
-      localStorage.setItem(LS_FIXED_SELECTED, defaultName);
-    }
-
-    function saveFixedToCurrent(){
-      if (!currentFixedName) return;
-      const lib = readFixedLib();
-      lib[currentFixedName] = { text: fixed.value ?? "", updatedAt: nowISO() };
-      writeFixedLib(lib);
-      clearFixedDraft(currentFixedName);
-      updateFixedDirtyUI();
-      renderFixedSelect();
-      showToast("固定を保存しました");
-    }
-
-    function saveFixedAsFlow(){
-      const lib = readFixedLib();
-      const suggestion = currentFixedName || "";
-      const name = (prompt("保存名を入力してください（固定）", suggestion) ?? "").trim();
-      if (!name){ showToast("キャンセル"); return; }
-
-      const exists = !!lib[name];
-      if (exists){
-        const ok = confirm(`「${name}」は既にあります。上書きしますか？`);
-        if (!ok){ showToast("キャンセル"); return; }
-      }
-
-      lib[name] = { text: fixed.value ?? "", updatedAt: nowISO() };
-      writeFixedLib(lib);
+      commitFixedDraftForBound();
+      switchingFixed = true;
+      switchingFromFixedName = boundFixedName;
 
       currentFixedName = name;
       localStorage.setItem(LS_FIXED_SELECTED, name);
 
-      clearFixedDraft(name);
-      updateFixedDirtyUI();
-      renderFixedSelect();
-      showToast(exists ? "固定を上書き保存しました" : "固定を保存しました");
-    }
+      fixed.value = loadFixedText(name);
 
-    function revertFixedToSaved(){
-      if (!currentFixedName) return;
-      fixed.value = getFixedSavedText(currentFixedName);
-      clearFixedDraft(currentFixedName);
-      updateFixedDirtyUI();
-      renderFixedSelect();
-      showToast("固定を保存済みに戻しました");
+      requestAnimationFrame(() => {
+        bindFixedEditorTo(name);
+        switchingFixed = false;
+        switchingFromFixedName = "";
+        renderFixedSelect();
+        showToast("固定プリセットを切替");
+      });
     }
-
-    function deleteCurrentFixed(){
+    function saveFixed(){
       const lib = readFixedLib();
-      const names = sortedFixedNames(lib);
-      if (names.length <= 1){
-        showToast("最後の1件は削除できません");
+      const prev = String(lib[currentFixedName]?.text ?? "");
+      const next = fixed.value ?? "";
+
+      // ★変更がないなら更新日時を変えない
+      if (next === prev){
+        clearFixedDraft(currentFixedName);
+        updateFixedUI();
+        showToast("変更なし");
         return;
       }
+
+      lib[currentFixedName] = { text: next, updatedAt: nowISO() };
+      writeFixedLib(lib);
+      clearFixedDraft(currentFixedName);
+      updateFixedUI();
+      renderFixedSelect();
+      showToast("更新しました");
+    }
+    function saveFixedAs(){
+      const lib = readFixedLib();
+      const suggestion = currentFixedName || "";
+
+      const name0 = (prompt("保存名を入力してください（固定）", suggestion) ?? "").trim();
+      if (!name0){ showToast("キャンセル"); return; }
+
+      const existingNames = new Set(Object.keys(lib));
+      const finalName = uniqueName(existingNames, name0); // ★同名なら（2）（3）…
+
+      lib[finalName] = { text: fixed.value ?? "", updatedAt: nowISO() };
+      writeFixedLib(lib);
+
+      currentFixedName = finalName;
+      localStorage.setItem(LS_FIXED_SELECTED, finalName);
+      clearFixedDraft(finalName);
+
+      renderFixedSelect();
+      updateFixedUI();
+
+      if (finalName !== name0) showToast(`「${finalName}」として複製しました`);
+      else showToast("複製して保存しました");
+    }
+    function revertFixed(){
+      const lib = readFixedLib();
+      fixed.value = String(lib[currentFixedName]?.text ?? "");
+      clearFixedDraft(currentFixedName);
+      updateFixedUI();
+      showToast("保存済みに戻しました");
+    }
+    function deleteFixed(){
+      const lib = readFixedLib();
+      const names = sortedFixedNames(lib);
+      if (names.length <= 1){ showToast("最後の1件は削除できません"); return; }
+
       const ok = confirm(`「${currentFixedName}」を削除しますか？（元に戻せません）`);
       if (!ok) return;
 
@@ -935,17 +1154,23 @@ function normalizeForMerge(s){
       writeFixedLib(lib);
       clearFixedDraft(currentFixedName);
 
-      // select next
-      const nextNames = sortedFixedNames(lib);
-      currentFixedName = nextNames[0];
-      localStorage.setItem(LS_FIXED_SELECTED, currentFixedName);
-
-      const draft = getFixedDraftRaw(currentFixedName);
-      fixed.value = (draft !== null) ? draft : getFixedSavedText(currentFixedName);
+      const next = sortedFixedNames(lib)[0];
+      currentFixedName = next;
+      localStorage.setItem(LS_FIXED_SELECTED, next);
+      fixed.value = loadFixedText(next);
+      bindFixedEditorTo(next);
 
       renderFixedSelect();
+      updateFixedUI();
       showToast("固定プリセットを削除しました");
     }
+
+    fixed.addEventListener("input", () => {
+      const target = switchingFixed ? switchingFromFixedName : boundFixedName;
+      if (!target) return;
+      setFixedDraft(target, fixed.value ?? "");
+      updateFixedUI();
+    });
 
     // =========================
     // Output actions
@@ -957,17 +1182,10 @@ function normalizeForMerge(s){
 
     async function doMergeCopy(){
       refreshOutput();
-      if (!lastMerged){
-        showToast("空です");
-        return;
-      }
+      if (!lastMerged){ showToast("空です"); return; }
       const ok = await copyToClipboard(lastMerged);
-      if (ok){
-        showToast("合体してコピーしました");
-      } else {
-        outputDetails.open = true;
-        showToast("コピーに失敗：出力欄を開きました");
-      }
+      showToast(ok ? "合体してコピーしました" : "コピー失敗：出力欄を使用してください");
+      if (!ok) outputDetails.open = true;
     }
 
     // =========================
@@ -975,9 +1193,9 @@ function normalizeForMerge(s){
     // =========================
     $("exportJson").addEventListener("click", () => {
       const data = {
-        version: 2,
+        version: 3,
         exportedAt: nowISO(),
-        scenes: readSceneLib(),
+        scenesDB: readSceneDB(),
         fixedPresets: readFixedLib()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -1000,27 +1218,60 @@ function normalizeForMerge(s){
         const obj = JSON.parse(text);
 
         // scenes
-        if (obj?.scenes && typeof obj.scenes === "object"){
-          const lib = readSceneLib();
-          for (const [name, payload] of Object.entries(obj.scenes)){
-            if (!payload || typeof payload !== "object") continue;
-            lib[name] = { text: String(payload.text ?? ""), updatedAt: payload.updatedAt || nowISO() };
+        if (obj?.scenesDB?.scenes && Array.isArray(obj.scenesDB.scenes)){
+          const db = readSceneDB();
+          const existingIds = new Set(db.scenes.map(s=>s.id));
+          const existingNames = new Set(db.scenes.map(s=>s.name));
+
+          for (const s of obj.scenesDB.scenes){
+            const name0 = String(s?.name ?? "scene");
+            const id0 = String(s?.id ?? "");
+            const id = (id0 && !existingIds.has(id0)) ? id0 : uuid();
+            const name = existingNames.has(name0) ? uniqueName(existingNames, name0) : name0;
+
+            existingIds.add(id);
+            existingNames.add(name);
+
+            db.scenes.push({
+              id,
+              name,
+              text: String(s?.text ?? ""),
+              createdAt: String(s?.createdAt ?? nowISO()),
+              updatedAt: String(s?.updatedAt ?? nowISO())
+            });
           }
-          writeSceneLib(lib);
+          writeSceneDB(db);
+        } else if (obj?.scenes && typeof obj.scenes === "object"){
+          // old style: { name: {text, updatedAt} }
+          const db = readSceneDB();
+          const existingNames = new Set(db.scenes.map(s=>s.name));
+          for (const [name0, payload] of Object.entries(obj.scenes)){
+            const name = uniqueName(existingNames, String(name0));
+            existingNames.add(name);
+            db.scenes.push({
+              id: uuid(),
+              name,
+              text: String(payload?.text ?? ""),
+              createdAt: String(payload?.createdAt ?? payload?.updatedAt ?? nowISO()),
+              updatedAt: String(payload?.updatedAt ?? nowISO())
+            });
+          }
+          writeSceneDB(db);
         }
 
         // fixed
         if (obj?.fixedPresets && typeof obj.fixedPresets === "object"){
           const lib = readFixedLib();
           for (const [name, payload] of Object.entries(obj.fixedPresets)){
-            if (!payload || typeof payload !== "object") continue;
-            lib[name] = { text: String(payload.text ?? ""), updatedAt: payload.updatedAt || nowISO() };
+            // インポート時は同名衝突を連番で回避
+            const existingNames = new Set(Object.keys(lib));
+            const finalName = existingNames.has(name) ? uniqueName(existingNames, name) : name;
+            lib[finalName] = { text: String(payload?.text ?? ""), updatedAt: payload?.updatedAt ?? nowISO() };
           }
           writeFixedLib(lib);
         }
 
-        renderSceneList();
-        renderFixedSelect();
+        init();
         showToast("インポートしました");
       } catch {
         showToast("インポート失敗（JSON形式を確認）");
@@ -1030,7 +1281,7 @@ function normalizeForMerge(s){
     });
 
     // =========================
-    // Wiring (buttons / inputs)
+    // Wiring
     // =========================
     $("mergeCopy").addEventListener("click", doMergeCopy);
     $("mergeCopy2").addEventListener("click", doMergeCopy);
@@ -1063,66 +1314,40 @@ function normalizeForMerge(s){
       showToast(ok ? "コピーしました" : "コピーに失敗しました");
     });
 
-    // Scene buttons
-    $("save").addEventListener("click", saveSceneToCurrent);
-    $("saveAs").addEventListener("click", saveSceneAsFlow);
-    $("revert").addEventListener("click", revertSceneToSaved);
-    $("clearSceneInput").addEventListener("click", () => {
+    $("newScene").addEventListener("click", newScene);
+    $("deleteScene").addEventListener("click", deleteScene);
+    $("sceneSave").addEventListener("click", saveScene);
+    $("sceneSaveAs").addEventListener("click", saveSceneAs);
+    $("sceneRevert").addEventListener("click", revertScene);
+    $("sceneClear").addEventListener("click", () => {
       scene.value = "";
-      setSceneDraft(currentSceneName, "");
-      updateSceneDirtyUI();
-      renderSceneList();
+      setSceneDraft(boundSceneId, "");
+      updateSceneUI();
+      scheduleRenderSceneList();
       showToast("シーン入力をクリア");
     });
-    $("newScene").addEventListener("click", newScene);
-    $("deleteScene").addEventListener("click", deleteCurrentScene);
 
-    search.addEventListener("input", renderSceneList);
+    search.addEventListener("input", scheduleRenderSceneList);
 
-    scene.addEventListener("input", () => {
-      setSceneDraft(currentSceneName, scene.value ?? "");
-      updateSceneDirtyUI();
-      renderSceneList();
-    });
-
-    // Fixed select (header)
     fixedSelect.addEventListener("change", () => selectFixed(fixedSelect.value));
+    $("openFixed").addEventListener("click", () => { fixedDetails.open = true; fixed.focus(); });
 
-    // Fixed buttons
-    $("fixedSave").addEventListener("click", saveFixedToCurrent);
-    $("fixedSaveAs").addEventListener("click", saveFixedAsFlow);
-    $("fixedRevert").addEventListener("click", revertFixedToSaved);
+    $("fixedSave").addEventListener("click", saveFixed);
+    $("fixedSaveAs").addEventListener("click", saveFixedAs);
+    $("fixedRevert").addEventListener("click", revertFixed);
     $("fixedClear").addEventListener("click", () => {
       fixed.value = "";
       setFixedDraft(currentFixedName, "");
-      updateFixedDirtyUI();
+      updateFixedUI();
       showToast("固定入力をクリア");
     });
-    $("fixedDelete").addEventListener("click", deleteCurrentFixed);
+    $("fixedDelete").addEventListener("click", deleteFixed);
 
-    fixed.addEventListener("input", () => {
-      if (!currentFixedName) return;
-      setFixedDraft(currentFixedName, fixed.value ?? "");
-      updateFixedDirtyUI();
-      renderFixedSelect();
-    });
-
-    $("openFixed").addEventListener("click", () => {
-      fixedDetails.open = true;
-      fixed.focus();
-    });
-
-    // Options
     dividerPreset.addEventListener("change", () => {
       dividerCustom.style.display = dividerPreset.value === "CUSTOM" ? "block" : "none";
-      // default is always blank line if you never touch it
     });
-    dividerCustom.addEventListener("input", () => {});
-    trim.addEventListener("change", () => {});
 
-    // Keyboard shortcuts:
-    // - Ctrl+Enter: merge & copy
-    // - Ctrl+S / Ctrl+Shift+S: focused textarea decides (scene or fixed)
+    // Keyboard shortcuts
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.key === "Enter"){
         e.preventDefault();
@@ -1132,14 +1357,12 @@ function normalizeForMerge(s){
       if (e.ctrlKey && (e.key === "s" || e.key === "S")){
         e.preventDefault();
         const inFixed = (document.activeElement === fixed);
-        const inScene = (document.activeElement === scene);
-
         if (e.shiftKey){
-          if (inFixed) saveFixedAsFlow();
-          else saveSceneAsFlow();
+          if (inFixed) saveFixedAs();
+          else saveSceneAs();
         } else {
-          if (inFixed) saveFixedToCurrent();
-          else saveSceneToCurrent();
+          if (inFixed) saveFixed();
+          else saveScene();
         }
       }
     });
@@ -1148,40 +1371,43 @@ function normalizeForMerge(s){
     // Init
     // =========================
     function init(){
-      // options defaults
+      // defaults
       dividerPreset.value = "\n\n";
       dividerCustom.value = "";
       dividerCustom.style.display = "none";
       trim.checked = true;
 
-      // fixed presets
+      // migrate old scenes (once)
+      migrateOldScenesIfNeeded();
+
+      // load scene selection
+      const db = readSceneDB();
+      const sel = localStorage.getItem(LS_SCENE_SELECTED_ID) ?? "";
+      if (sel && findSceneById(db, sel)){
+        currentSceneId = sel;
+      } else {
+        currentSceneId = null;
+      }
+
+      // bind editor and load text
+      scene.value = loadSceneText(db, currentSceneId);
+      bindSceneEditorTo(currentSceneId);
+
+      updateSceneUI();
+      renderSceneList();
+
+      // fixed
       ensureFixedDefault();
-      const fixedLib = readFixedLib();
-      const fixedNames = sortedFixedNames(fixedLib);
-      currentFixedName = localStorage.getItem(LS_FIXED_SELECTED) ?? fixedNames[0];
-      if (!fixedLib[currentFixedName]) currentFixedName = fixedNames[0];
+      const lib = readFixedLib();
+      const names = sortedFixedNames(lib);
+      currentFixedName = localStorage.getItem(LS_FIXED_SELECTED) ?? names[0];
+      if (!lib[currentFixedName]) currentFixedName = names[0];
       localStorage.setItem(LS_FIXED_SELECTED, currentFixedName);
 
-      // load fixed (draft priority)
-      const fixedDraft = getFixedDraftRaw(currentFixedName);
-      fixed.value = (fixedDraft !== null) ? fixedDraft : getFixedSavedText(currentFixedName);
+      fixed.value = loadFixedText(currentFixedName);
+      bindFixedEditorTo(currentFixedName);
       renderFixedSelect();
-      updateFixedDirtyUI();
-
-      // scenes
-      const sceneLib = readSceneLib();
-      const sel = localStorage.getItem(LS_SCENE_SELECTED) ?? "";
-      if (sel && sceneLib[sel]){
-        currentSceneName = sel;
-        const draft = getSceneDraftRaw(sel);
-        scene.value = (draft !== null) ? draft : getSceneSavedText(sel);
-      } else {
-        currentSceneName = "";
-        const draft = getSceneDraftRaw("");
-        scene.value = (draft !== null) ? draft : "";
-      }
-      updateSceneDirtyUI();
-      renderSceneList();
+      updateFixedUI();
 
       // output
       refreshOutput();
