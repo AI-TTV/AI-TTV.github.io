@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>プロンプト合体</title>
+  <title>プロンプト合体（極限UX版：フォルダ見出し/折りたたみ/フォルダ別手動順/★/DnD/フォルダ新規/フォルダ限定検索）</title>
   <style>
     :root{
       --bg:#f6f7fb;
@@ -138,6 +138,7 @@
       font-size: 13px;
       user-select:none;
       color: var(--text);
+      white-space: nowrap;
     }
     @media (prefers-color-scheme: dark){
       .btn{ background: rgba(255,255,255,.06); }
@@ -163,28 +164,141 @@
     }
     .btn.small{ padding: 8px 10px; border-radius: 10px; font-size: 12px; }
 
+    .scopeBadgeBtn{
+      max-width: 200px;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
     .hint{ font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 8px; }
 
+    /* ========== list ========== */
     .list{
       display:flex; flex-direction:column;
-      gap: 6px;
-      max-height: 520px;
+      gap: 8px;
+      max-height: min(560px, calc(100vh - 380px));
       overflow:auto;
       padding-right: 2px;
     }
+    .sublist{
+      display:flex; flex-direction:column;
+      gap: 6px;
+    }
+    .sectionHeader{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+      padding: 2px 2px 0;
+      user-select:none;
+    }
+    .emptyState{
+      padding: 10px 12px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* Folder headers (All + Manual + No search OR scoped search) */
+    .folderHeader{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.72);
+      padding: 8px 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      cursor:pointer;
+      user-select:none;
+      outline: none;
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      backdrop-filter: blur(6px);
+    }
+    @media (prefers-color-scheme: dark){
+      .folderHeader{ background: rgba(15,22,48,.78); }
+    }
+    .folderHeader:hover{ filter: brightness(1.02); }
+    .folderHeader:focus{
+      box-shadow: 0 0 0 3px rgba(37,99,235,.16);
+    }
+    @media (prefers-color-scheme: dark){
+      .folderHeader:focus{
+        box-shadow: 0 0 0 3px rgba(106,167,255,.18);
+      }
+    }
+    .folderHeader.active{
+      border-color: rgba(37,99,235,.55);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
+    @media (prefers-color-scheme: dark){
+      .folderHeader.active{
+        border-color: rgba(106,167,255,.65);
+        box-shadow: 0 0 0 3px rgba(106,167,255,.14);
+      }
+    }
+    .fhLeft{
+      display:flex; align-items:center; gap:8px; min-width:0;
+    }
+    .fhCaret{
+      width: 18px;
+      text-align:center;
+      font-weight: 900;
+      flex:none;
+    }
+    .fhName{
+      font-weight: 900;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 240px;
+    }
+    .fhRight{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color: var(--muted);
+      font-size: 12px;
+      flex:none;
+    }
+    .fhCount{
+      border:1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: rgba(255,255,255,.45);
+      white-space: nowrap;
+    }
+    @media (prefers-color-scheme: dark){
+      .fhCount{ background: rgba(0,0,0,.18); }
+    }
+    .fhDot{
+      width: 8px; height: 8px; border-radius: 999px;
+      background: rgba(37,99,235,.85);
+      flex:none;
+    }
+    @media (prefers-color-scheme: dark){
+      .fhDot{ background: rgba(106,167,255,.85); }
+    }
+
     .sceneItem{
-      width:100%;
-      text-align:left;
       border:1px solid var(--line);
       border-radius: 12px;
       background: rgba(255,255,255,.55);
       padding: 10px 10px;
       cursor:pointer;
       display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+      user-select:none;
+      outline: none;
     }
     @media (prefers-color-scheme: dark){
       .sceneItem{ background: rgba(255,255,255,.06); }
     }
+    .sceneItem:hover{ filter: brightness(1.02); }
     .sceneItem.active{
       border-color: rgba(37,99,235,.55);
       box-shadow: 0 0 0 3px rgba(37,99,235,.10);
@@ -195,10 +309,78 @@
         box-shadow: 0 0 0 3px rgba(106,167,255,.16);
       }
     }
-    .sceneName{ font-weight: 900; font-size: 13px; }
+
+    .sceneLeft{ min-width: 0; }
+    .sceneName{
+      font-weight: 900;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 260px;
+    }
     .sceneMeta{ font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    .sceneRight{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex:none;
+      padding-top: 2px;
+    }
+
+    .iconBtn{
+      width: 34px;
+      height: 30px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,.55);
+      color: var(--text);
+      cursor:pointer;
+      font-weight: 900;
+      line-height: 1;
+      user-select:none;
+      flex:none;
+    }
+    @media (prefers-color-scheme: dark){
+      .iconBtn{ background: rgba(255,255,255,.06); }
+    }
+    .iconBtn:hover{ filter: brightness(1.02); }
+
+    .starBtn.active{
+      border-color: rgba(234,179,8,.35);
+      box-shadow: 0 0 0 3px rgba(234,179,8,.10);
+    }
+    @media (prefers-color-scheme: dark){
+      .starBtn.active{
+        border-color: rgba(250,204,21,.45);
+        box-shadow: 0 0 0 3px rgba(250,204,21,.14);
+      }
+    }
+
+    .scopeBtn.active{
+      border-color: rgba(37,99,235,.55);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
+    @media (prefers-color-scheme: dark){
+      .scopeBtn.active{
+        border-color: rgba(106,167,255,.65);
+        box-shadow: 0 0 0 3px rgba(106,167,255,.14);
+      }
+    }
+
+    .dragHandle{ cursor: grab; }
+    .dragHandle:active{ cursor: grabbing; }
+    .dragHandle.disabled{
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
     .dot{
-      width:10px; height:10px; border-radius:999px; margin-top: 4px;
+      width:10px; height:10px; border-radius:999px;
       border:1px solid var(--line);
       background: transparent;
       flex:none;
@@ -207,6 +389,15 @@
     @media (prefers-color-scheme: dark){
       .dot.draft{ background: rgba(250,204,21,.95); }
     }
+
+    /* Drop indicators (scene) */
+    .sceneItem.drop-before{ box-shadow: 0 -3px 0 0 rgba(37,99,235,.85) inset; }
+    .sceneItem.drop-after{  box-shadow: 0  3px 0 0 rgba(37,99,235,.85) inset; }
+    @media (prefers-color-scheme: dark){
+      .sceneItem.drop-before{ box-shadow: 0 -3px 0 0 rgba(106,167,255,.85) inset; }
+      .sceneItem.drop-after{  box-shadow: 0  3px 0 0 rgba(106,167,255,.85) inset; }
+    }
+    .sceneItem.dragging{ opacity: .65; }
 
     details{
       margin-top: 12px;
@@ -235,16 +426,17 @@
     }
 
     .statusLine{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
       font-size: 12px; color: var(--muted);
     }
     .badge{
-      display:inline-flex; align-items:center; gap:6px;
+      display:inline-flex; align-items:center; gap:8px;
       padding: 4px 10px;
       border-radius: 999px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.45);
       color: var(--muted);
+      white-space: nowrap;
     }
     @media (prefers-color-scheme: dark){
       .badge{ background: rgba(0,0,0,.18); }
@@ -252,6 +444,18 @@
     .badge.warn{ color: #7c5a00; border-color: rgba(234,179,8,.35); }
     @media (prefers-color-scheme: dark){
       .badge.warn{ color: #ffe08a; }
+    }
+    .badge input[type="checkbox"]{ width: 14px; height: 14px; }
+
+    .badgeSelect select{
+      width: 160px;
+      padding: 4px 8px;
+      border-radius: 10px;
+      border:1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      font-size: 12px;
+      outline:none;
     }
 
     .toast{
@@ -265,8 +469,108 @@
       transform: translateY(8px);
       transition: .18s ease;
       pointer-events:none;
+      z-index: 2000;
     }
     .toast.show{ opacity: 1; transform: translateY(0); }
+
+    /* ========= drawer ========= */
+    #backdrop{
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: .18s ease;
+      z-index: 1400;
+    }
+
+    body.lib-collapsed .layout{ grid-template-columns: 1fr; }
+    body.lib-collapsed #libraryPanel{
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 360px;
+      max-width: 92vw;
+      z-index: 1500;
+      transform: translateX(-105%);
+      transition: transform .18s ease;
+      border-radius: 0;
+      height: 100vh;
+    }
+    body.lib-collapsed.lib-open #libraryPanel{ transform: translateX(0); }
+    body.lib-collapsed.lib-open #backdrop{
+      opacity: 1;
+      pointer-events: auto;
+    }
+    body.lib-collapsed #libraryPanel .list{
+      max-height: calc(100vh - 410px);
+    }
+
+    /* compact */
+    body.compact .sceneItem{ padding: 8px 10px; }
+    body.compact .sceneName{ font-size: 12px; max-width: 220px; }
+    body.compact .sceneMeta{ display:none; }
+    body.compact .sceneRight{ padding-top: 0; }
+    body.compact .folderHeader{ padding: 7px 10px; }
+    body.compact .fhName{ max-width: 210px; }
+
+    #libraryDock, #libraryClose{ display:none; }
+    body.lib-collapsed #libraryClose{ display:inline-flex; }
+    body.lib-collapsed:not(.is-mobile) #libraryDock{ display:inline-flex; }
+
+    /* ========= folder dialog ========= */
+    dialog{
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 0;
+      width: min(760px, 94vw);
+      box-shadow: var(--shadow);
+      background: var(--panel);
+      color: var(--text);
+    }
+    dialog::backdrop{ background: rgba(0,0,0,.35); }
+    .modalHead{
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .modalTitle{ font-weight: 900; font-size: 13px; }
+    .modalBody{ padding: 12px; }
+    .folderList{
+      display:flex; flex-direction:column; gap:8px;
+      margin-top: 10px;
+      max-height: min(520px, 70vh);
+      overflow:auto;
+      padding-right: 2px;
+    }
+    .folderRow{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.55);
+      padding: 10px 10px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      user-select:none;
+    }
+    @media (prefers-color-scheme: dark){
+      .folderRow{ background: rgba(255,255,255,.06); }
+    }
+    .folderRow.drop-before{ box-shadow: 0 -3px 0 0 rgba(37,99,235,.85) inset; }
+    .folderRow.drop-after{  box-shadow: 0  3px 0 0 rgba(37,99,235,.85) inset; }
+    @media (prefers-color-scheme: dark){
+      .folderRow.drop-before{ box-shadow: 0 -3px 0 0 rgba(106,167,255,.85) inset; }
+      .folderRow.drop-after{  box-shadow: 0  3px 0 0 rgba(106,167,255,.85) inset; }
+    }
+
+    .folderLeft{ min-width:0; }
+    .folderName{
+      font-weight: 900;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 420px;
+    }
+    .folderMeta{ font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .folderRight{ display:flex; gap:8px; align-items:center; flex:none; }
+    .folderHandle.disabled{ opacity:.45; cursor:not-allowed; }
   </style>
 </head>
 <body>
@@ -276,8 +580,9 @@
         <h1>プロンプト合体</h1>
         <div class="sub">
           <span class="chip">Ctrl+Enter：合体してコピー</span>
-          <span class="chip">Ctrl+S：保存/更新（フォーカスでシーン/固定を判定）</span>
+          <span class="chip">Ctrl+S：保存/更新（フォーカスでシーン/固定）</span>
           <span class="chip">Ctrl+Shift+S：名前付き保存/複製</span>
+          <span class="chip">Ctrl+K：検索</span>
 
           <span class="chip chipSelect">
             固定プリセット：
@@ -289,6 +594,7 @@
       </div>
 
       <div class="row">
+        <button class="btn" id="libraryToggle">一覧を隠す</button>
         <button class="btn primary" id="mergeCopy">合体してコピー</button>
         <button class="btn" id="copyOnly">出力だけコピー</button>
       </div>
@@ -296,21 +602,58 @@
 
     <div class="layout">
       <!-- Left: Scene Library -->
-      <section class="panel">
+      <section class="panel" id="libraryPanel" aria-label="シーン一覧">
         <div class="panelHead">
           <div class="panelTitle">シーン一覧</div>
           <div class="statusLine">
+            <label class="badge" title="一覧をコンパクトにして表示行数を増やします">
+              <input type="checkbox" id="compactToggle" />
+              コンパクト
+            </label>
+
+            <label class="badge" title="お気に入り（★）を上にまとめて表示します">
+              <input type="checkbox" id="favPinToggle" />
+              ★上
+            </label>
+
+            <label class="badge" title="お気に入り（★）だけ表示します">
+              <input type="checkbox" id="favOnlyToggle" />
+              ★のみ
+            </label>
+
+            <span class="badge badgeSelect" title="手動のときだけドラッグで並び替えできます（同じフォルダ内のみ）">
+              並び順：
+              <select id="sortSelect">
+                <option value="manual">手動（ドラッグ可）</option>
+                <option value="updated">更新日時</option>
+                <option value="name">名前</option>
+              </select>
+            </span>
+
             <span class="badge" id="sceneCount">0件</span>
+
+            <button class="btn small" id="libraryDock" title="左に固定して常時表示に戻す">固定表示</button>
+            <button class="btn small" id="libraryClose" title="一覧を閉じる（Escでも可）">閉じる</button>
           </div>
         </div>
+
         <div class="panelBody">
           <div class="row">
+            <select id="folderFilter" class="grow" title="フォルダで絞り込み"></select>
+            <button class="btn small" id="folderCollapseAll" title="表示中フォルダをすべて折りたたむ（条件：すべて＋手動＋検索なし）" style="display:none;">全折</button>
+            <button class="btn small" id="folderExpandAll" title="表示中フォルダをすべて展開（条件：すべて＋手動＋検索なし）" style="display:none;">全展</button>
+            <button class="btn small" id="folderManage">フォルダ管理</button>
+          </div>
+
+          <div class="row">
             <input id="search" type="text" class="grow" placeholder="検索（名前）" />
+            <button class="btn small" id="clearSearch" title="検索をクリア">×</button>
+            <button class="btn small scopeBadgeBtn" id="searchScopeBadge" style="display:none;" title="フォルダ限定検索を解除"></button>
             <button class="btn small" id="newScene">新規</button>
           </div>
 
-          <div class="hint" style="margin-top:6px;">
-            保存対象は<strong>ID固定</strong>。並び替えで位置が変わっても別シーンに上書きされません。
+          <div class="hint" id="libraryHint" style="margin-top:6px;">
+            📁で絞り込み。★でお気に入り。≡をドラッグで並び替え（手動＆検索なし＆同じフォルダ内）。
           </div>
 
           <div class="list" id="sceneList" style="margin-top:10px;"></div>
@@ -323,14 +666,22 @@
       </section>
 
       <!-- Right: Scene Editor -->
-      <section class="panel">
+      <section class="panel" aria-label="編集">
         <div class="panelHead">
           <div class="panelTitle">編集</div>
           <div class="statusLine">
+            <button class="iconBtn starBtn" id="sceneFavBtn" type="button" title="お気に入り" aria-label="お気に入り" disabled>☆</button>
+
+            <span class="badge badgeSelect" title="このシーンのフォルダ（新規の保存先にもなります）">
+              📁
+              <select id="sceneFolderSelect"></select>
+            </span>
+
             <span class="badge" id="currentSceneName">新規</span>
             <span class="badge warn" id="sceneDirtyBadge" style="display:none;">未保存（下書き）</span>
           </div>
         </div>
+
         <div class="panelBody">
           <div class="row">
             <button class="btn ok" id="sceneSave">保存</button>
@@ -418,7 +769,7 @@
         </div>
 
         <div class="row" style="margin-top:10px;">
-          <button class="btn" id="exportJson">エクスポート（シーン＋固定 / JSON）</button>
+          <button class="btn" id="exportJson">エクスポート（シーン＋固定＋フォルダ / JSON）</button>
           <label class="btn" for="importJson" style="cursor:pointer;">インポート</label>
           <input id="importJson" type="file" accept="application/json" style="display:none;" />
           <span class="hint" style="margin:0;">※ PC移行・バックアップ用</span>
@@ -428,19 +779,61 @@
 
   </div>
 
+  <div id="backdrop" aria-hidden="true"></div>
   <div id="toast" class="toast">コピーしました</div>
+
+  <!-- Folder Manage Dialog -->
+  <dialog id="folderDialog">
+    <div class="modalHead">
+      <div class="modalTitle">フォルダ管理（≡で並び替え）</div>
+      <div class="row" style="gap:8px;">
+        <button class="btn small" id="folderNew" type="button">新規</button>
+        <button class="btn small" id="folderDialogClose" type="button">閉じる</button>
+      </div>
+    </div>
+    <div class="modalBody">
+      <div class="hint">
+        ・≡をドラッグでフォルダ順を変更できます（<strong>未分類は固定</strong>）。<br>
+        ・削除したフォルダ内のシーンは<strong>未分類</strong>へ移動します（安全設計）。
+      </div>
+      <div id="folderList" class="folderList"></div>
+    </div>
+  </dialog>
 
   <script>
     const $ = (id) => document.getElementById(id);
 
     // ---- DOM ----
+    const libraryToggle = $("libraryToggle");
+    const backdrop = $("backdrop");
+    const libraryClose = $("libraryClose");
+    const libraryDock = $("libraryDock");
+    const compactToggle = $("compactToggle");
+    const favPinToggle = $("favPinToggle");
+    const favOnlyToggle = $("favOnlyToggle");
+    const sortSelect = $("sortSelect");
+    const libraryHint = $("libraryHint");
+
+    const folderFilter = $("folderFilter");
+    const folderManage = $("folderManage");
+    const folderCollapseAllBtn = $("folderCollapseAll");
+    const folderExpandAllBtn = $("folderExpandAll");
+    const folderDialog = $("folderDialog");
+    const folderListEl = $("folderList");
+    const folderNewBtn = $("folderNew");
+    const folderDialogCloseBtn = $("folderDialogClose");
+
     const search = $("search");
+    const clearSearchBtn = $("clearSearch");
+    const searchScopeBadge = $("searchScopeBadge");
     const sceneList = $("sceneList");
     const sceneCount = $("sceneCount");
     const deleteSceneBtn = $("deleteScene");
 
     const currentSceneNameBadge = $("currentSceneName");
     const sceneDirtyBadge = $("sceneDirtyBadge");
+    const sceneFavBtn = $("sceneFavBtn");
+    const sceneFolderSelect = $("sceneFolderSelect");
 
     const scene = $("scene");
     const fixed = $("fixed");
@@ -460,37 +853,83 @@
 
     const toast = $("toast");
 
-    // ---- Keys (Scene: ID-based DB) ----
-    const LS_SCENE_DB = "pm_scene_db_v1";                 // {version:1, scenes:[{id,name,text,createdAt,updatedAt}]}
-    const LS_SCENE_SELECTED_ID = "pm_scene_selected_id_v1";
-    const LS_SCENE_DRAFT_NEW = "pm_scene_draft_new_v1";   // draft for new
-    const LS_SCENE_DRAFT_PREFIX = "pm_scene_draft_v1_";   // + id
-    const LS_SCENE_MIGRATED = "pm_scene_db_v1_migrated";  // "1"
+    // ---- UI persistence keys ----
+    const LS_UI_COLLAPSED = "ui_lib_collapsed_v1";
+    const LS_UI_COMPACT  = "ui_lib_compact_v1";
+    const LS_UI_FAV_PIN  = "ui_fav_pin_v1";
+    const LS_UI_FAV_ONLY = "ui_fav_only_v1";
+    const LS_UI_SORT     = "ui_scene_sort_v1";
+    const LS_UI_FOLDER_FILTER = "ui_folder_filter_v1";
+    const LS_UI_NEW_SCENE_FOLDER = "ui_new_scene_folder_v1";
+    const LS_UI_FOLDER_COLLAPSE = "ui_folder_collapse_state_v1";
+    const LS_UI_SEARCH_SCOPE = "ui_search_scope_folder_v1";
 
-    // ---- Keys (old scene libs for migration) ----
+    // ---- DB keys ----
+    const LS_SCENE_DB = "pm_scene_db_v2";
+    const LS_SCENE_DB_OLD = "pm_scene_db_v1";
+    const LS_SCENE_SELECTED_ID = "pm_scene_selected_id_v1";
+    const LS_SCENE_DRAFT_NEW = "pm_scene_draft_new_v1";
+    const LS_SCENE_DRAFT_PREFIX = "pm_scene_draft_v1_";
+    const LS_SCENE_MIGRATED = "pm_scene_db_v1_migrated";
+
+    const LS_FOLDER_DB = "pm_folder_db_v2";
+    const LS_FOLDER_DB_OLD = "pm_folder_db_v1";
+    const FOLDER_UNFILED_ID = "unfiled";
+
+    // ---- old libs for migration (very old) ----
     const OLD_SCENE_LIB_KEYS = ["pm_scene_library_v3", "pm_scene_library_v2", "pm_scene_library_v1"];
     const OLD_SELECTED_NAME_KEYS = ["pm_selected_scene_name_v3", "pm_selected_scene_name_v2", "pm_selected_scene_name_v1"];
 
-    // ---- Keys (Fixed presets) ----
-    const LS_FIXED_LIB = "pm_fixed_library_v1";            // { name: {text, updatedAt} }
-    const LS_FIXED_SELECTED = "pm_selected_fixed_name_v1"; // string
-    const LS_FIXED_DRAFT_PREFIX = "pm_draft_fixed_v1_";    // + encodeURIComponent(name)
+    // ---- Fixed presets keys ----
+    const LS_FIXED_LIB = "pm_fixed_library_v1";
+    const LS_FIXED_SELECTED = "pm_selected_fixed_name_v1";
+    const LS_FIXED_DRAFT_PREFIX = "pm_draft_fixed_v1_";
     const LS_OLD_FIXED_SINGLE = "pm_fixed_v3";
 
-    // ---- State (Scene) ----
-    let currentSceneId = null;     // null => new
-    let boundSceneId = null;       // what textarea is currently bound to
+    // ---- State ----
+    let currentSceneId = null;
+    let boundSceneId = null;
     let switchingScene = false;
     let switchingFromSceneId = null;
 
-    // ---- State (Fixed) ----
     let currentFixedName = "";
     let boundFixedName = "";
     let switchingFixed = false;
     let switchingFromFixedName = "";
 
-    // ---- Output ----
     let lastMerged = "";
+
+    // UI state
+    let collapsedPref = (localStorage.getItem(LS_UI_COLLAPSED) ?? "0") === "1";
+    let compactPref   = (localStorage.getItem(LS_UI_COMPACT)  ?? "0") === "1";
+    let favPinPref    = (localStorage.getItem(LS_UI_FAV_PIN)  ?? "1") === "1";
+    let favOnlyPref   = (localStorage.getItem(LS_UI_FAV_ONLY) ?? "0") === "1";
+    let sortMode      = (localStorage.getItem(LS_UI_SORT)     ?? "manual");
+    let folderFilterId = (localStorage.getItem(LS_UI_FOLDER_FILTER) ?? "ALL");
+    let newSceneFolderId = (localStorage.getItem(LS_UI_NEW_SCENE_FOLDER) ?? FOLDER_UNFILED_ID);
+
+    // folder collapse state
+    let folderCollapseMap = {};
+
+    // search scope (folder-only search)
+    let searchScopeFolderId = (localStorage.getItem(LS_UI_SEARCH_SCOPE) ?? "");
+
+    // DnD state (scene)
+    let dragState = null; // {id, group, folderId}
+    let dropEl = null;
+    let dropPos = "before";
+    let suppressClickUntil = 0;
+
+    // DnD state (folder)
+    let folderDragId = null;
+    let folderDropEl = null;
+    let folderDropPos = "before";
+
+    // render assist
+    let scrollToActiveNext = false;
+
+    // new-scene toast override
+    let nextNewSceneToast = "";
 
     // ---- Utils ----
     function showToast(msg){
@@ -499,22 +938,17 @@
       setTimeout(() => toast.classList.remove("show"), 1200);
     }
     function nowISO(){ return new Date().toISOString(); }
-
     function uuid(){
       if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
       return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
     }
-
     function toLF(s){ return (s ?? "").replace(/\r\n/g, "\n").replace(/\r/g, "\n"); }
 
     // 空白整理ONでも「先頭」や「行そのもの」を消さない安全版
     function normalizeForMerge(s){
       const t = toLF(s);
       if (!trim.checked) return t;
-      return t
-        .split("\n")
-        .map(line => line.replace(/[ \t]+$/g, "")) // 行末のみ
-        .join("\n");
+      return t.split("\n").map(line => line.replace(/[ \t]+$/g, "")).join("\n");
     }
 
     function getDivider(){
@@ -561,11 +995,10 @@
       return `${y}-${m}-${day} ${hh}:${mm}`;
     }
 
-    // ★連番命名：サンプル / サンプル（2） / サンプル（3）...
-    // 既に（n）や(n)で終わっていたら、その次から
-    function uniqueName(existingSet, desired){
+    // 連番命名（サンプル / サンプル（2） / サンプル（3）…）
+    function uniqueName(existingSet, desired, fallback="scene"){
       let name = (desired ?? "").trim();
-      if (!name) name = "scene";
+      if (!name) name = fallback;
 
       if (!existingSet.has(name)) return name;
 
@@ -586,33 +1019,328 @@
       return `${base}（${Date.now()}）`;
     }
 
+    function asNum(v){
+      const n = Number(v);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
     // =========================
-    // Scene DB (ID-based)
+    // Folder collapse state
     // =========================
-    function emptySceneDB(){ return { version: 1, scenes: [] }; }
+    function loadFolderCollapseMap(){
+      try{
+        const raw = localStorage.getItem(LS_UI_FOLDER_COLLAPSE);
+        const obj = raw ? JSON.parse(raw) : {};
+        if (!obj || typeof obj !== "object") return {};
+        return obj;
+      } catch {
+        return {};
+      }
+    }
+    function saveFolderCollapseMap(){
+      localStorage.setItem(LS_UI_FOLDER_COLLAPSE, JSON.stringify(folderCollapseMap));
+    }
+    function sanitizeFolderCollapseMap(){
+      const set = folderSet();
+      let changed = false;
+      for (const k of Object.keys(folderCollapseMap)){
+        if (!set.has(k)){
+          delete folderCollapseMap[k];
+          changed = true;
+        }
+      }
+      if (changed) saveFolderCollapseMap();
+    }
+    function isFolderCollapsed(fid){
+      return !!folderCollapseMap[fid];
+    }
+    function setFolderCollapsed(fid, collapsed){
+      if (collapsed) folderCollapseMap[fid] = true;
+      else delete folderCollapseMap[fid];
+      saveFolderCollapseMap();
+    }
+    function toggleFolderCollapsed(fid){
+      setFolderCollapsed(fid, !isFolderCollapsed(fid));
+    }
+    function setAllFoldersCollapsed(collapsed){
+      const set = folderSet();
+      for (const fid of set){
+        if (collapsed) folderCollapseMap[fid] = true;
+        else delete folderCollapseMap[fid];
+      }
+      // 選択中のフォルダは見えるように（迷子防止）
+      const db = readSceneDB();
+      const s = currentSceneId ? findSceneById(db, currentSceneId) : null;
+      const selFid = s ? safeFolderId(s.folderId, set) : null;
+      if (selFid) delete folderCollapseMap[selFid];
+
+      saveFolderCollapseMap();
+    }
+    function expandFolderForSceneId(sceneId){
+      if (!sceneId) return;
+      const db = readSceneDB();
+      const set = folderSet();
+      const s = findSceneById(db, sceneId);
+      if (!s) return;
+      const fid = safeFolderId(s.folderId, set);
+      if (folderCollapseMap[fid]){
+        delete folderCollapseMap[fid];
+        saveFolderCollapseMap();
+      }
+    }
+
+    // =========================
+    // Folder-only search scope
+    // =========================
+    function sanitizeSearchScope(){
+      const set = folderSet();
+      if (searchScopeFolderId && !set.has(searchScopeFolderId)){
+        searchScopeFolderId = "";
+        localStorage.removeItem(LS_UI_SEARCH_SCOPE);
+      }
+    }
+    function hasSearchScope(){
+      const set = folderSet();
+      return !!(searchScopeFolderId && set.has(searchScopeFolderId));
+    }
+    function setSearchScope(fidOrEmpty){
+      const set = folderSet();
+      const fid = (fidOrEmpty ?? "").toString();
+
+      if (!fid){
+        searchScopeFolderId = "";
+        localStorage.removeItem(LS_UI_SEARCH_SCOPE);
+      } else if (set.has(fid)){
+        searchScopeFolderId = fid;
+        localStorage.setItem(LS_UI_SEARCH_SCOPE, fid);
+      } else {
+        searchScopeFolderId = "";
+        localStorage.removeItem(LS_UI_SEARCH_SCOPE);
+      }
+    }
+    function updateSearchScopeBadge(folderMap){
+      // フォルダ絞り込み中は“限定”が既に成立しているので、混乱防止で隠す
+      if (folderFilterId !== "ALL"){
+        searchScopeBadge.style.display = "none";
+        searchScopeBadge.textContent = "";
+        return;
+      }
+
+      const set = folderSet();
+      if (!searchScopeFolderId || !set.has(searchScopeFolderId)){
+        searchScopeBadge.style.display = "none";
+        searchScopeBadge.textContent = "";
+        return;
+      }
+
+      const name = (folderMap?.[searchScopeFolderId]) ?? (folderNameMap()[searchScopeFolderId] ?? "未分類");
+      searchScopeBadge.style.display = "inline-flex";
+      searchScopeBadge.textContent = `📁 ${name} 限定`;
+      searchScopeBadge.title = `フォルダ限定検索を解除（現在：${name}）`;
+    }
+    function toggleSearchScope(fid){
+      const set = folderSet();
+      if (!set.has(fid)) return;
+
+      if (searchScopeFolderId === fid){
+        setSearchScope("");
+        scheduleRenderSceneList();
+        search.focus();
+        search.select();
+        showToast("検索の限定を解除");
+        return;
+      }
+
+      setSearchScope(fid);
+
+      // 限定ON＝“探す”モードに入るので、即入力できるようにする
+      search.focus();
+      search.select();
+
+      // 見えない事故を防ぐ：対象フォルダは展開
+      if (folderCollapseMap[fid]){
+        delete folderCollapseMap[fid];
+        saveFolderCollapseMap();
+      }
+
+      const name = folderNameMap()[fid] ?? "未分類";
+      scheduleRenderSceneList();
+      showToast(`検索を「${name}」に限定`);
+    }
+
+    // =========================
+    // Folder DB (v2: order)
+    // =========================
+    function emptyFolderDB(){ return { version: 2, folders: [] }; }
+
+    function readFolderDB(){
+      try{
+        const raw = localStorage.getItem(LS_FOLDER_DB);
+        if (raw){
+          const obj = JSON.parse(raw);
+          const folders = Array.isArray(obj?.folders) ? obj.folders : [];
+          return {
+            version: 2,
+            folders: folders
+              .filter(f => f && typeof f === "object")
+              .map(f => ({
+                id: String(f.id ?? ""),
+                name: String(f.name ?? ""),
+                createdAt: String(f.createdAt ?? nowISO()),
+                updatedAt: String(f.updatedAt ?? nowISO()),
+                order: asNum(f.order)
+              }))
+              .filter(f => f.id && f.name)
+          };
+        }
+      } catch {}
+
+      try{
+        const raw = localStorage.getItem(LS_FOLDER_DB_OLD);
+        if (!raw) return emptyFolderDB();
+        const obj = JSON.parse(raw);
+        const folders = Array.isArray(obj?.folders) ? obj.folders : [];
+        return {
+          version: 2,
+          folders: folders
+            .filter(f => f && typeof f === "object")
+            .map((f, idx) => ({
+              id: String(f.id ?? ""),
+              name: String(f.name ?? ""),
+              createdAt: String(f.createdAt ?? nowISO()),
+              updatedAt: String(f.updatedAt ?? nowISO()),
+              order: (idx+1) * 10
+            }))
+            .filter(f => f.id && f.name)
+        };
+      } catch {
+        return emptyFolderDB();
+      }
+    }
+
+    function writeFolderDB(db){
+      localStorage.setItem(LS_FOLDER_DB, JSON.stringify({ version: 2, folders: db.folders }));
+    }
+
+    function ensureDefaultFolders(){
+      const db = readFolderDB();
+      const hasUnfiled = db.folders.some(f => f.id === FOLDER_UNFILED_ID);
+      if (!hasUnfiled){
+        db.folders.unshift({
+          id: FOLDER_UNFILED_ID,
+          name: "未分類",
+          createdAt: nowISO(),
+          updatedAt: nowISO(),
+          order: 0
+        });
+      }
+      writeFolderDB(db);
+    }
+
+    function sortedFolders(){
+      const db = readFolderDB();
+      const unfiled = db.folders.find(f => f.id === FOLDER_UNFILED_ID) ?? {
+        id: FOLDER_UNFILED_ID, name:"未分類", createdAt: nowISO(), updatedAt: nowISO(), order: 0
+      };
+      const rest = db.folders.filter(f => f.id !== FOLDER_UNFILED_ID);
+      rest.sort((a,b)=>{
+        const ao = Number.isFinite(a.order) ? a.order : 1e18;
+        const bo = Number.isFinite(b.order) ? b.order : 1e18;
+        if (ao !== bo) return ao - bo;
+        return a.name.localeCompare(b.name, "ja");
+      });
+      return [unfiled, ...rest];
+    }
+
+    function repairFolderOrders(){
+      const db = readFolderDB();
+      for (const f of db.folders){
+        if (f.id === FOLDER_UNFILED_ID) f.order = 0;
+        if (!Number.isFinite(f.order)) f.order = NaN;
+      }
+      const list = sortedFolders();
+      let ord = 10;
+      for (const f of list){
+        if (f.id === FOLDER_UNFILED_ID){
+          f.order = 0;
+        } else {
+          f.order = ord;
+          ord += 10;
+        }
+      }
+      db.folders = list;
+      writeFolderDB(db);
+    }
+
+    function folderSet(){
+      return new Set(sortedFolders().map(f => f.id));
+    }
+
+    function safeFolderId(id, set){
+      if (id && set.has(id)) return id;
+      return FOLDER_UNFILED_ID;
+    }
+
+    function folderNameMap(){
+      const map = {};
+      for (const f of sortedFolders()) map[f.id] = f.name;
+      return map;
+    }
+
+    function folderOrderMap(){
+      const map = {};
+      for (const f of sortedFolders()) map[f.id] = (Number.isFinite(f.order) ? f.order : 1e18);
+      return map;
+    }
+
+    // =========================
+    // Scene DB (v2: order per scene)
+    // =========================
+    function emptySceneDB(){ return { version: 2, scenes: [] }; }
+
+    function normalizeSceneObj(s){
+      return {
+        id: String(s?.id ?? uuid()),
+        name: String(s?.name ?? "scene"),
+        text: String(s?.text ?? ""),
+        createdAt: String(s?.createdAt ?? s?.updatedAt ?? nowISO()),
+        updatedAt: String(s?.updatedAt ?? nowISO()),
+        fav: !!s?.fav,
+        folderId: String(s?.folderId ?? FOLDER_UNFILED_ID),
+        order: asNum(s?.order)
+      };
+    }
 
     function readSceneDB(){
       try{
         const raw = localStorage.getItem(LS_SCENE_DB);
+        if (raw){
+          const obj = JSON.parse(raw);
+          const scenes = Array.isArray(obj?.scenes) ? obj.scenes : [];
+          return { version: 2, scenes: scenes.map(normalizeSceneObj) };
+        }
+      } catch {}
+
+      try{
+        const raw = localStorage.getItem(LS_SCENE_DB_OLD);
         if (!raw) return emptySceneDB();
         const obj = JSON.parse(raw);
-        if (!obj || typeof obj !== "object") return emptySceneDB();
-        if (!Array.isArray(obj.scenes)) return emptySceneDB();
-        return { version: 1, scenes: obj.scenes };
+        const scenes = Array.isArray(obj?.scenes) ? obj.scenes : [];
+        return { version: 2, scenes: scenes.map(normalizeSceneObj) };
       } catch {
         return emptySceneDB();
       }
     }
 
     function writeSceneDB(db){
-      localStorage.setItem(LS_SCENE_DB, JSON.stringify({ version: 1, scenes: db.scenes }));
+      localStorage.setItem(LS_SCENE_DB, JSON.stringify({ version: 2, scenes: db.scenes }));
     }
 
     function sceneDraftKey(id){
       return id ? (LS_SCENE_DRAFT_PREFIX + id) : LS_SCENE_DRAFT_NEW;
     }
     function getSceneDraftRaw(id){
-      return localStorage.getItem(sceneDraftKey(id)); // null or string
+      return localStorage.getItem(sceneDraftKey(id));
     }
     function setSceneDraft(id, text){
       localStorage.setItem(sceneDraftKey(id), text ?? "");
@@ -625,7 +1353,7 @@
       return db.scenes.find(s => s.id === id) || null;
     }
 
-    function migrateOldScenesIfNeeded(){
+    function migrateVeryOldScenesIfNeeded(){
       const migrated = localStorage.getItem(LS_SCENE_MIGRATED) === "1";
       const db = readSceneDB();
       if (migrated || db.scenes.length > 0) return;
@@ -643,7 +1371,7 @@
 
           for (const [name0, payload] of Object.entries(lib)){
             const baseName = String(name0);
-            const name = uniqueName(existingNames, baseName);
+            const name = uniqueName(existingNames, baseName, "scene");
             existingNames.add(name);
 
             const text = String(payload?.text ?? "");
@@ -655,7 +1383,10 @@
               name,
               text,
               createdAt,
-              updatedAt
+              updatedAt,
+              fav: false,
+              folderId: FOLDER_UNFILED_ID,
+              order: NaN
             });
             imported++;
           }
@@ -663,10 +1394,9 @@
       }
 
       if (imported > 0){
-        db.scenes = newScenes;
+        db.scenes = newScenes.map(normalizeSceneObj);
         writeSceneDB(db);
 
-        // migrate selection by name (best-effort)
         let oldSelectedName = "";
         for (const k of OLD_SELECTED_NAME_KEYS){
           const v = localStorage.getItem(k);
@@ -683,6 +1413,54 @@
       localStorage.setItem(LS_SCENE_MIGRATED, "1");
     }
 
+    function repairSceneFolderAndOrders(){
+      const db = readSceneDB();
+      const fset = folderSet();
+
+      for (const s of db.scenes){
+        s.folderId = safeFolderId(s.folderId, fset);
+      }
+
+      const folderIds = Array.from(fset);
+      for (const fid of folderIds){
+        const inFolder = db.scenes.filter(s => s.folderId === fid);
+        if (inFolder.length === 0) continue;
+
+        const anyInvalid = inFolder.some(s => !Number.isFinite(s.order));
+        if (anyInvalid){
+          let max = 0;
+          for (const s of inFolder){
+            if (Number.isFinite(s.order)) max = Math.max(max, s.order);
+          }
+          let next = (Number.isFinite(max) ? max : 0) + 10;
+
+          for (const s of db.scenes){
+            if (s.folderId !== fid) continue;
+            if (!Number.isFinite(s.order)){
+              s.order = next;
+              next += 10;
+            }
+          }
+        }
+
+        const sorted = inFolder.slice().sort((a,b)=>{
+          if (a.order !== b.order) return a.order - b.order;
+          const ua = a.updatedAt ?? "";
+          const ub = b.updatedAt ?? "";
+          if (ua !== ub) return ua < ub ? 1 : -1;
+          return (a.name ?? "").localeCompare((b.name ?? ""), "ja");
+        });
+
+        let ord = 10;
+        for (const s of sorted){
+          s.order = ord;
+          ord += 10;
+        }
+      }
+
+      writeSceneDB(db);
+    }
+
     function sceneHasDirtyDraft(db, id){
       const s = findSceneById(db, id);
       if (!s) return false;
@@ -691,18 +1469,78 @@
       return draft !== null && draft !== saved;
     }
 
-    function sortedFilteredScenes(db, q){
-      const query = (q ?? "").trim().toLowerCase();
-      let list = db.scenes.slice();
-      if (query){
-        list = list.filter(s => (s.name ?? "").toLowerCase().includes(query));
+    // =========================
+    // View logic
+    // =========================
+    function isReorderEnabled(){
+      return sortMode === "manual" && (search.value.trim() === "");
+    }
+
+    // フォルダ見出し＋折りたたみを出す条件：
+    // すべて + 手動 + (検索なし OR フォルダ限定検索ON)
+    function isFolderChunkMode(){
+      return folderFilterId === "ALL" && sortMode === "manual" && (search.value.trim() === "" || hasSearchScope());
+    }
+
+    function getListGroupForScene(s){
+      if (favOnlyPref) return "fav";
+      if (favPinPref) return (s.fav ? "fav" : "other");
+      return "all";
+    }
+
+    function getSortedScenesForView(db){
+      const fset = folderSet();
+
+      let list = db.scenes.slice().map(normalizeSceneObj);
+      for (const s of list) s.folderId = safeFolderId(s.folderId, fset);
+
+      if (folderFilterId !== "ALL"){
+        list = list.filter(s => s.folderId === folderFilterId);
       }
-      list.sort((a,b)=>{
-        const ua = a.updatedAt ?? "";
-        const ub = b.updatedAt ?? "";
-        if (ua !== ub) return ua < ub ? 1 : -1;
-        return (a.name ?? "").localeCompare((b.name ?? ""), "ja");
-      });
+
+      const qRaw = search.value.trim();
+      const q = qRaw.toLowerCase();
+
+      // フォルダ限定検索：入力がある時だけ絞る（空の時は視界を変えない）
+      if (q && folderFilterId === "ALL" && hasSearchScope()){
+        list = list.filter(s => s.folderId === searchScopeFolderId);
+      }
+
+      if (q){
+        list = list.filter(s => (s.name ?? "").toLowerCase().includes(q));
+      }
+
+      if (favOnlyPref){
+        list = list.filter(s => !!s.fav);
+      }
+
+      if (sortMode === "updated"){
+        list.sort((a,b)=>{
+          const ua = a.updatedAt ?? "";
+          const ub = b.updatedAt ?? "";
+          if (ua !== ub) return ua < ub ? 1 : -1;
+          return (a.name ?? "").localeCompare((b.name ?? ""), "ja");
+        });
+      } else if (sortMode === "name"){
+        list.sort((a,b)=> (a.name ?? "").localeCompare((b.name ?? ""), "ja"));
+      } else {
+        const fOrder = folderOrderMap();
+        list.sort((a,b)=>{
+          const fa = (folderFilterId === "ALL") ? (fOrder[a.folderId] ?? 1e18) : 0;
+          const fb = (folderFilterId === "ALL") ? (fOrder[b.folderId] ?? 1e18) : 0;
+          if (fa !== fb) return fa - fb;
+
+          const ao = Number.isFinite(a.order) ? a.order : 1e18;
+          const bo = Number.isFinite(b.order) ? b.order : 1e18;
+          if (ao !== bo) return ao - bo;
+
+          const ua = a.updatedAt ?? "";
+          const ub = b.updatedAt ?? "";
+          if (ua !== ub) return ua < ub ? 1 : -1;
+          return (a.name ?? "").localeCompare((b.name ?? ""), "ja");
+        });
+      }
+
       return list;
     }
 
@@ -716,45 +1554,1062 @@
       });
     }
 
-    function renderSceneList(){
-      const db = readSceneDB();
-      const items = sortedFilteredScenes(db, search.value);
-
-      sceneList.innerHTML = "";
-
-      for (const s of items){
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "sceneItem" + ((s.id === currentSceneId) ? " active" : "");
-        btn.dataset.id = s.id;
-
-        const left = document.createElement("div");
-        const title = document.createElement("div");
-        title.className = "sceneName";
-        title.textContent = s.name ?? "(no name)";
-
-        const meta = document.createElement("div");
-        meta.className = "sceneMeta";
-        meta.textContent = "更新: " + formatUpdated(s.updatedAt);
-
-        left.appendChild(title);
-        left.appendChild(meta);
-
-        const dot = document.createElement("div");
-        dot.className = "dot" + (sceneHasDirtyDraft(db, s.id) ? " draft" : "");
-        dot.title = sceneHasDirtyDraft(db, s.id) ? "未保存の下書きあり" : "";
-
-        btn.appendChild(left);
-        btn.appendChild(dot);
-
-        btn.addEventListener("click", () => selectSceneById(s.id));
-        sceneList.appendChild(btn);
-      }
-
-      sceneCount.textContent = `${db.scenes.length}件`;
-      deleteSceneBtn.disabled = (currentSceneId === null);
+    function updateFolderChunkControls(){
+      // “全折/全展”は、複数フォルダを眺める時だけ出す（検索中はノイズ）
+      const on = isFolderChunkMode() && (search.value.trim() === "");
+      folderCollapseAllBtn.style.display = on ? "inline-flex" : "none";
+      folderExpandAllBtn.style.display = on ? "inline-flex" : "none";
     }
 
+    function updateLibraryHint(){
+      const reorder = isReorderEnabled();
+      const chunk = isFolderChunkMode();
+      const scoped = (folderFilterId === "ALL" && hasSearchScope());
+
+      if (chunk){
+        const extra = scoped ? "（🔍限定中）" : "";
+        libraryHint.innerHTML =
+          `📁見出しで“かたまり化”${extra}。見出しクリック=折/展開、<strong>🔍=このフォルダだけ検索</strong>、<strong>＋=このフォルダに新規</strong>。≡で並び替え（同じフォルダ内のみ）。`;
+        return;
+      }
+
+      libraryHint.innerHTML = reorder
+        ? `📁で絞り込み。★でお気に入り。≡をドラッグで並び替え（同じフォルダ内のみ）。`
+        : `★でお気に入り。並び替えは <strong>手動</strong> かつ <strong>検索が空</strong> のときだけ有効です。`;
+    }
+
+    function clearDropIndicator(){
+      if (dropEl){
+        dropEl.classList.remove("drop-before","drop-after");
+        dropEl = null;
+      }
+    }
+    function shouldSuppressClick(){
+      return Date.now() < suppressClickUntil;
+    }
+
+    // =========================
+    // Scene reorder (per-folder)
+    // =========================
+    function reorderWithinFolder(dragId, targetId, pos, group, folderId){
+      const db = readSceneDB();
+      const fset = folderSet();
+
+      const fid = safeFolderId(folderId, fset);
+      const folderScenes = db.scenes
+        .filter(s => safeFolderId(s.folderId, fset) === fid)
+        .map(normalizeSceneObj)
+        .sort((a,b)=> a.order - b.order);
+
+      if (folderScenes.length === 0) return;
+
+      const groupMatch = (s) => {
+        if (group === "fav") return !!s.fav;
+        if (group === "other") return !s.fav;
+        return true;
+      };
+
+      const groupIndices = [];
+      for (let i=0;i<folderScenes.length;i++){
+        if (groupMatch(folderScenes[i])) groupIndices.push(i);
+      }
+
+      const fromAll = folderScenes.findIndex(s => s.id === dragId);
+      const toAll = folderScenes.findIndex(s => s.id === targetId);
+      if (fromAll < 0 || toAll < 0) return;
+      if (!groupIndices.includes(fromAll) || !groupIndices.includes(toAll)) return;
+
+      const groupIds = groupIndices.map(i => folderScenes[i].id);
+      const fromG = groupIds.indexOf(dragId);
+      const toG = groupIds.indexOf(targetId);
+      if (fromG < 0 || toG < 0) return;
+
+      const [moved] = groupIds.splice(fromG, 1);
+      let insert = toG;
+      if (fromG < toG) insert--;
+      if (pos === "after") insert++;
+      groupIds.splice(insert, 0, moved);
+
+      const idToObj = new Map(db.scenes.map(s=>[s.id, s]));
+      for (let k=0;k<groupIndices.length;k++){
+        const idx = groupIndices[k];
+        const sid = groupIds[k];
+        const real = idToObj.get(sid);
+        if (real) folderScenes[idx] = normalizeSceneObj(real);
+      }
+
+      let ord = 10;
+      for (const s of folderScenes){
+        const real = idToObj.get(s.id);
+        if (real){
+          real.order = ord;
+          ord += 10;
+        }
+      }
+
+      writeSceneDB(db);
+      showToast("並び替えました");
+      scheduleRenderSceneList();
+    }
+
+    // =========================
+    // Scene insert/move (order-safe)
+    // =========================
+    function insertNewSceneIntoFolder(db, newObj, afterSceneIdOrNull){
+      const fset = folderSet();
+      newObj.folderId = safeFolderId(newObj.folderId, fset);
+
+      db.scenes.push(newObj);
+
+      const fid = newObj.folderId;
+      const folderScenes = db.scenes
+        .filter(s => safeFolderId(s.folderId, fset) === fid)
+        .sort((a,b)=>{
+          const ao = Number.isFinite(a.order) ? a.order : 1e18;
+          const bo = Number.isFinite(b.order) ? b.order : 1e18;
+          return ao - bo;
+        });
+
+      let insertIndex = 0;
+      if (afterSceneIdOrNull){
+        const idx = folderScenes.findIndex(s => s.id === afterSceneIdOrNull);
+        if (idx >= 0) insertIndex = idx + 1;
+      }
+
+      const curIdx = folderScenes.findIndex(s => s.id === newObj.id);
+      if (curIdx >= 0) folderScenes.splice(curIdx, 1);
+      folderScenes.splice(insertIndex, 0, newObj);
+
+      let ord = 10;
+      for (const s of folderScenes){
+        s.order = ord;
+        ord += 10;
+      }
+    }
+
+    function moveSceneToFolder(sceneId, newFolderId){
+      const db = readSceneDB();
+      const fset = folderSet();
+
+      const s = findSceneById(db, sceneId);
+      if (!s) return;
+
+      const oldFolder = safeFolderId(s.folderId, fset);
+      const newFolder = safeFolderId(newFolderId, fset);
+      if (oldFolder === newFolder) return;
+
+      const oldList = db.scenes
+        .filter(x => safeFolderId(x.folderId, fset) === oldFolder && x.id !== sceneId)
+        .sort((a,b)=> (Number.isFinite(a.order)?a.order:1e18) - (Number.isFinite(b.order)?b.order:1e18));
+
+      let ord = 10;
+      for (const x of oldList){
+        x.order = ord;
+        ord += 10;
+      }
+
+      s.folderId = newFolder;
+
+      const newList = db.scenes
+        .filter(x => safeFolderId(x.folderId, fset) === newFolder)
+        .sort((a,b)=> (Number.isFinite(a.order)?a.order:1e18) - (Number.isFinite(b.order)?b.order:1e18));
+
+      const movedIdx = newList.findIndex(x => x.id === sceneId);
+      if (movedIdx >= 0) newList.splice(movedIdx, 1);
+      newList.push(s);
+
+      ord = 10;
+      for (const x of newList){
+        x.order = ord;
+        ord += 10;
+      }
+
+      writeSceneDB(db);
+
+      if (folderFilterId !== "ALL" && folderFilterId === oldFolder){
+        folderFilterId = newFolder;
+        localStorage.setItem(LS_UI_FOLDER_FILTER, folderFilterId);
+        renderFolderFilterSelect();
+      }
+
+      expandFolderForSceneId(sceneId);
+      scrollToActiveNext = true;
+
+      updateSceneUI();
+      scheduleRenderSceneList();
+      showToast("フォルダを移動しました");
+    }
+
+    function toggleSceneFavorite(id){
+      const db = readSceneDB();
+      const s = findSceneById(db, id);
+      if (!s) return;
+      s.fav = !s.fav;
+      writeSceneDB(db);
+      updateSceneUI();
+      scheduleRenderSceneList();
+      showToast(s.fav ? "お気に入りに追加" : "お気に入り解除");
+    }
+
+    // =========================
+    // Render: Scene item
+    // =========================
+    function renderSceneItem(s, folderMap, showFolderInMeta){
+      const group = getListGroupForScene(s);
+      const canReorder = isReorderEnabled();
+
+      const row = document.createElement("div");
+      row.className = "sceneItem" + ((s.id === currentSceneId) ? " active" : "");
+      row.dataset.id = s.id;
+      row.dataset.group = group;
+      row.dataset.folderId = s.folderId;
+      row.tabIndex = 0;
+      row.setAttribute("role","button");
+
+      const folderName = folderMap[s.folderId] ?? "未分類";
+      row.title = `${s.name}\n更新: ${formatUpdated(s.updatedAt)}\nフォルダ: ${folderName}`;
+
+      row.addEventListener("click", () => {
+        if (shouldSuppressClick()) return;
+        selectSceneById(s.id);
+      });
+      row.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          if (shouldSuppressClick()) return;
+          selectSceneById(s.id);
+        }
+      });
+
+      row.addEventListener("dragover", (e) => {
+        if (!dragState) return;
+        if (!canReorder) return;
+
+        const targetId = row.dataset.id;
+        const targetGroup = row.dataset.group;
+        const targetFolderId = row.dataset.folderId;
+
+        if (!targetId || targetId === dragState.id) return;
+        if (targetGroup !== dragState.group) return;
+        if (targetFolderId !== dragState.folderId) return;
+
+        e.preventDefault();
+        const rect = row.getBoundingClientRect();
+        const mid = rect.top + rect.height/2;
+        const pos = (e.clientY < mid) ? "before" : "after";
+
+        if (dropEl && dropEl !== row) dropEl.classList.remove("drop-before","drop-after");
+        dropEl = row;
+        dropPos = pos;
+        row.classList.toggle("drop-before", pos === "before");
+        row.classList.toggle("drop-after", pos === "after");
+        e.dataTransfer.dropEffect = "move";
+      });
+
+      row.addEventListener("drop", (e) => {
+        if (!dragState) return;
+        if (!canReorder) return;
+
+        const targetId = row.dataset.id;
+        const targetGroup = row.dataset.group;
+        const targetFolderId = row.dataset.folderId;
+
+        if (!targetId || targetId === dragState.id) return;
+        if (targetGroup !== dragState.group) return;
+        if (targetFolderId !== dragState.folderId) return;
+
+        e.preventDefault();
+        reorderWithinFolder(dragState.id, targetId, dropPos, dragState.group, dragState.folderId);
+        dragState = null;
+        clearDropIndicator();
+      });
+
+      const left = document.createElement("div");
+      left.className = "sceneLeft";
+
+      const name = document.createElement("div");
+      name.className = "sceneName";
+      name.textContent = s.name ?? "(no name)";
+
+      const meta = document.createElement("div");
+      meta.className = "sceneMeta";
+      meta.textContent = showFolderInMeta
+        ? `更新: ${formatUpdated(s.updatedAt)} ｜ 📁 ${folderName}`
+        : `更新: ${formatUpdated(s.updatedAt)}`;
+
+      left.appendChild(name);
+      left.appendChild(meta);
+
+      const right = document.createElement("div");
+      right.className = "sceneRight";
+
+      const star = document.createElement("button");
+      star.type = "button";
+      star.className = "iconBtn starBtn" + (s.fav ? " active" : "");
+      star.textContent = s.fav ? "★" : "☆";
+      star.title = s.fav ? "お気に入り解除" : "お気に入りに追加";
+      star.setAttribute("aria-label", star.title);
+      star.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleSceneFavorite(s.id);
+      });
+
+      const dot = document.createElement("div");
+      dot.className = "dot" + (sceneHasDirtyDraft(readSceneDB(), s.id) ? " draft" : "");
+      dot.title = dot.classList.contains("draft") ? "未保存の下書きあり" : "";
+
+      const handle = document.createElement("button");
+      handle.type = "button";
+      handle.className = "iconBtn dragHandle" + (canReorder ? "" : " disabled");
+      handle.textContent = "≡";
+      handle.title = canReorder ? "ドラッグして並び替え（同じフォルダ内のみ）" : "並び替え不可（手動＆検索なし）";
+      handle.setAttribute("aria-label", handle.title);
+      handle.draggable = !!canReorder;
+
+      handle.addEventListener("click", (e) => e.stopPropagation());
+
+      handle.addEventListener("dragstart", (e) => {
+        if (!canReorder){
+          e.preventDefault();
+          return;
+        }
+        dragState = { id: s.id, group, folderId: s.folderId };
+        suppressClickUntil = Date.now() + 600;
+
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", s.id);
+
+        const item = handle.closest(".sceneItem");
+        if (item) item.classList.add("dragging");
+      });
+
+      handle.addEventListener("dragend", () => {
+        const item = handle.closest(".sceneItem");
+        if (item) item.classList.remove("dragging");
+        dragState = null;
+        clearDropIndicator();
+        suppressClickUntil = Date.now() + 200;
+      });
+
+      right.appendChild(star);
+      right.appendChild(dot);
+      right.appendChild(handle);
+
+      row.appendChild(left);
+      row.appendChild(right);
+
+      return row;
+    }
+
+    function renderSectionHeader(text){
+      const h = document.createElement("div");
+      h.className = "sectionHeader";
+      h.textContent = text;
+      return h;
+    }
+
+    function renderFlatList(parent, scenes, folderMap, showFolderInMeta){
+      const sub = document.createElement("div");
+      sub.className = "sublist";
+      for (const s of scenes){
+        sub.appendChild(renderSceneItem(s, folderMap, showFolderInMeta));
+      }
+      parent.appendChild(sub);
+    }
+
+    function newSceneInFolder(fid){
+      const set = folderSet();
+      if (!set.has(fid)) return;
+
+      newSceneFolderId = fid;
+      localStorage.setItem(LS_UI_NEW_SCENE_FOLDER, newSceneFolderId);
+
+      // 迷子防止：新規を作るフォルダは展開
+      if (folderCollapseMap[fid]){
+        delete folderCollapseMap[fid];
+        saveFolderCollapseMap();
+      }
+
+      const name = folderNameMap()[fid] ?? "未分類";
+      nextNewSceneToast = `新規（保存先：${name}）`;
+      newScene();
+    }
+
+    function renderFolderHeader(folder, count, collapsed, containsActive, isScoped){
+      const h = document.createElement("div");
+      h.className = "folderHeader" + (containsActive ? " active" : "");
+      h.dataset.folderId = folder.id;
+      h.tabIndex = 0;
+      h.setAttribute("role","button");
+      h.title = "クリックで折りたたみ/展開";
+
+      const left = document.createElement("div");
+      left.className = "fhLeft";
+
+      const caret = document.createElement("div");
+      caret.className = "fhCaret";
+      caret.textContent = collapsed ? "▸" : "▾";
+
+      const name = document.createElement("div");
+      name.className = "fhName";
+      name.textContent = `📁 ${folder.name}`;
+
+      left.appendChild(caret);
+      left.appendChild(name);
+
+      const right = document.createElement("div");
+      right.className = "fhRight";
+
+      if (containsActive){
+        const dot = document.createElement("div");
+        dot.className = "fhDot";
+        dot.title = "選択中のシーンがこのフォルダにあります";
+        right.appendChild(dot);
+      }
+
+      const c = document.createElement("div");
+      c.className = "fhCount";
+      c.textContent = `${count}件`;
+      right.appendChild(c);
+
+      // 🔍 このフォルダだけ検索（トグル）
+      const scopeBtn = document.createElement("button");
+      scopeBtn.type = "button";
+      scopeBtn.className = "iconBtn scopeBtn" + (isScoped ? " active" : "");
+      scopeBtn.textContent = "🔍";
+      scopeBtn.title = isScoped ? "このフォルダだけ検索：解除" : "このフォルダだけ検索（検索欄にフォーカス）";
+      scopeBtn.setAttribute("aria-label", scopeBtn.title);
+      scopeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleSearchScope(folder.id);
+      });
+      right.appendChild(scopeBtn);
+
+      // ＋ このフォルダに新規
+      const addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "iconBtn";
+      addBtn.textContent = "＋";
+      addBtn.title = "このフォルダに新規シーン";
+      addBtn.setAttribute("aria-label", addBtn.title);
+      addBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        newSceneInFolder(folder.id);
+      });
+      right.appendChild(addBtn);
+
+      h.appendChild(left);
+      h.appendChild(right);
+
+      h.addEventListener("click", () => {
+        toggleFolderCollapsed(folder.id);
+        scheduleRenderSceneList();
+      });
+      h.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " "){
+          e.preventDefault();
+          toggleFolderCollapsed(folder.id);
+          scheduleRenderSceneList();
+        }
+      });
+
+      return h;
+    }
+
+    function renderChunkedByFolder(parent, scenes, folderMap){
+      const folders = sortedFolders();
+      const byFolder = new Map();
+      for (const s of scenes){
+        if (!byFolder.has(s.folderId)) byFolder.set(s.folderId, []);
+        byFolder.get(s.folderId).push(s);
+      }
+
+      const searchingNow = search.value.trim() !== "";
+
+      for (const f of folders){
+        const arr = byFolder.get(f.id);
+        if (!arr || arr.length === 0) continue;
+
+        const containsActive = !!(currentSceneId && arr.some(x => x.id === currentSceneId));
+        const scoped = (folderFilterId === "ALL" && hasSearchScope() && searchScopeFolderId === f.id);
+
+        // 検索中は結果を見失わないように“表示上は展開”
+        const collapsed = searchingNow ? false : isFolderCollapsed(f.id);
+
+        parent.appendChild(renderFolderHeader(f, arr.length, collapsed, containsActive, scoped));
+
+        if (!collapsed){
+          renderFlatList(parent, arr, folderMap, false);
+        }
+      }
+    }
+
+    // =========================
+    // Render: Scene list main
+    // =========================
+    function renderSceneList(){
+      const db = readSceneDB();
+      const folderMap = folderNameMap();
+
+      sanitizeSearchScope();
+      updateSearchScopeBadge(folderMap);
+
+      const viewList = getSortedScenesForView(db);
+
+      const total = db.scenes.length;
+      const favCount = db.scenes.filter(s => !!s.fav).length;
+      sceneCount.textContent = `${viewList.length}件（全${total} / ★${favCount}）`;
+
+      deleteSceneBtn.disabled = (currentSceneId === null);
+      updateFolderChunkControls();
+      updateLibraryHint();
+
+      const chunkMode = isFolderChunkMode();
+      const searchingNow = search.value.trim() !== "";
+
+      // chunkModeのときは見出しがあるので、アイテム側にはフォルダ表示を省略
+      const showFolderInMetaFlat = (folderFilterId === "ALL" && !chunkMode);
+
+      const scrollTop = sceneList.scrollTop;
+      sceneList.innerHTML = "";
+
+      if (viewList.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "emptyState";
+        empty.textContent =
+          favOnlyPref ? "お気に入り（★）がありません。まず★を付けてください。"
+          : "該当するシーンがありません。条件を変えるか「新規」を作成してください。";
+        sceneList.appendChild(empty);
+        sceneList.scrollTop = scrollTop;
+        return;
+      }
+
+      // 検索中は“分割表示”を抑制（見た目のノイズと視線ジャンプを減らす）
+      const useFavPinGrouping = (favPinPref && !favOnlyPref && !searchingNow);
+
+      if (useFavPinGrouping){
+        const favs = viewList.filter(s => !!s.fav);
+        const others = viewList.filter(s => !s.fav);
+
+        if (favs.length > 0){
+          sceneList.appendChild(renderSectionHeader("★ お気に入り（即アクセス）"));
+          renderFlatList(sceneList, favs, folderMap, (folderFilterId === "ALL"));
+        }
+
+        sceneList.appendChild(renderSectionHeader("すべて"));
+
+        if (chunkMode){
+          renderChunkedByFolder(sceneList, others, folderMap);
+        } else {
+          renderFlatList(sceneList, others, folderMap, showFolderInMetaFlat);
+        }
+      } else {
+        if (chunkMode){
+          renderChunkedByFolder(sceneList, viewList, folderMap);
+        } else {
+          renderFlatList(sceneList, viewList, folderMap, showFolderInMetaFlat);
+        }
+      }
+
+      if (scrollToActiveNext){
+        const activeEl = sceneList.querySelector(".sceneItem.active");
+        if (activeEl) activeEl.scrollIntoView({ block: "nearest" });
+        scrollToActiveNext = false;
+      } else {
+        sceneList.scrollTop = scrollTop;
+      }
+    }
+
+    // =========================
+    // Folder selects + manager UI
+    // =========================
+    function renderFolderFilterSelect(){
+      const folders = sortedFolders();
+
+      if (folderFilterId !== "ALL" && !folders.some(f => f.id === folderFilterId)){
+        folderFilterId = "ALL";
+        localStorage.setItem(LS_UI_FOLDER_FILTER, folderFilterId);
+      }
+
+      folderFilter.innerHTML = "";
+      const optAll = document.createElement("option");
+      optAll.value = "ALL";
+      optAll.textContent = "すべて（全フォルダ）";
+      folderFilter.appendChild(optAll);
+
+      for (const f of folders){
+        const opt = document.createElement("option");
+        opt.value = f.id;
+        opt.textContent = `📁 ${f.name}`;
+        folderFilter.appendChild(opt);
+      }
+
+      folderFilter.value = folderFilterId;
+    }
+
+    function renderSceneFolderSelect(){
+      const folders = sortedFolders();
+      const fset = new Set(folders.map(f=>f.id));
+
+      sceneFolderSelect.innerHTML = "";
+      for (const f of folders){
+        const opt = document.createElement("option");
+        opt.value = f.id;
+        opt.textContent = `📁 ${f.name}`;
+        sceneFolderSelect.appendChild(opt);
+      }
+
+      let fid = FOLDER_UNFILED_ID;
+      if (currentSceneId === null){
+        fid = safeFolderId(newSceneFolderId, fset);
+      } else {
+        const db = readSceneDB();
+        const s = findSceneById(db, currentSceneId);
+        fid = safeFolderId(s?.folderId, fset);
+      }
+      sceneFolderSelect.value = fid;
+    }
+
+    function folderCountsById(dbScenes){
+      const fset = folderSet();
+      const counts = {};
+      for (const fid of fset) counts[fid] = 0;
+      for (const s of dbScenes){
+        const fid = safeFolderId(s.folderId, fset);
+        counts[fid] = (counts[fid] ?? 0) + 1;
+      }
+      return counts;
+    }
+
+    function openFolderDialog(){
+      renderFolderManagerList();
+      if (typeof folderDialog.showModal === "function") folderDialog.showModal();
+      else folderDialog.setAttribute("open", "open");
+    }
+    function closeFolderDialog(){
+      if (folderDialog.open) folderDialog.close();
+      else folderDialog.removeAttribute("open");
+    }
+
+    function clearFolderDropIndicator(){
+      if (folderDropEl){
+        folderDropEl.classList.remove("drop-before","drop-after");
+        folderDropEl = null;
+      }
+    }
+
+    function reorderFolders(dragId, targetId, pos){
+      if (!dragId || !targetId || dragId === targetId) return;
+      if (dragId === FOLDER_UNFILED_ID || targetId === FOLDER_UNFILED_ID) return;
+
+      const db = readFolderDB();
+      const list = sortedFolders().filter(f => f.id !== FOLDER_UNFILED_ID).map(f => f.id);
+
+      const from = list.indexOf(dragId);
+      const to = list.indexOf(targetId);
+      if (from < 0 || to < 0) return;
+
+      const [moved] = list.splice(from, 1);
+      let insert = to;
+      if (from < to) insert--;
+      if (pos === "after") insert++;
+      list.splice(insert, 0, moved);
+
+      const unfiled = db.folders.find(f => f.id === FOLDER_UNFILED_ID) ?? { id:FOLDER_UNFILED_ID, name:"未分類", createdAt: nowISO(), updatedAt: nowISO(), order:0 };
+      unfiled.order = 0;
+
+      const map = new Map(db.folders.map(f => [f.id, f]));
+      const newFolders = [unfiled];
+
+      let ord = 10;
+      for (const id of list){
+        const f = map.get(id);
+        if (!f) continue;
+        f.order = ord;
+        ord += 10;
+        newFolders.push(f);
+      }
+
+      for (const f of db.folders){
+        if (!newFolders.some(x => x.id === f.id)){
+          if (f.id === FOLDER_UNFILED_ID) continue;
+          f.order = ord;
+          ord += 10;
+          newFolders.push(f);
+        }
+      }
+
+      db.folders = newFolders;
+      writeFolderDB(db);
+
+      renderFolderFilterSelect();
+      renderSceneFolderSelect();
+      renderFolderManagerList();
+      scheduleRenderSceneList();
+      showToast("フォルダ順を変更しました");
+    }
+
+    function renderFolderManagerList(){
+      const folders = sortedFolders();
+      const db = readSceneDB();
+      const counts = folderCountsById(db.scenes);
+
+      folderListEl.innerHTML = "";
+
+      for (const f of folders){
+        const row = document.createElement("div");
+        row.className = "folderRow";
+        row.dataset.folderId = f.id;
+
+        const left = document.createElement("div");
+        left.className = "folderLeft";
+
+        const name = document.createElement("div");
+        name.className = "folderName";
+        name.textContent = (f.id === FOLDER_UNFILED_ID) ? `未分類（固定）` : f.name;
+
+        const meta = document.createElement("div");
+        meta.className = "folderMeta";
+        meta.textContent = `シーン数: ${counts[f.id] ?? 0}`;
+
+        left.appendChild(name);
+        left.appendChild(meta);
+
+        const right = document.createElement("div");
+        right.className = "folderRight";
+
+        const handle = document.createElement("button");
+        handle.type = "button";
+        handle.className = "iconBtn folderHandle" + ((f.id === FOLDER_UNFILED_ID) ? " disabled" : "");
+        handle.textContent = "≡";
+        handle.title = (f.id === FOLDER_UNFILED_ID) ? "未分類は固定です" : "ドラッグで並び替え";
+        handle.setAttribute("aria-label", handle.title);
+        handle.draggable = (f.id !== FOLDER_UNFILED_ID);
+
+        handle.addEventListener("dragstart", (e) => {
+          if (f.id === FOLDER_UNFILED_ID){
+            e.preventDefault();
+            return;
+          }
+          folderDragId = f.id;
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", f.id);
+        });
+
+        handle.addEventListener("dragend", () => {
+          folderDragId = null;
+          clearFolderDropIndicator();
+        });
+
+        row.addEventListener("dragover", (e) => {
+          if (!folderDragId) return;
+          if (f.id === FOLDER_UNFILED_ID) return;
+          if (folderDragId === f.id) return;
+
+          e.preventDefault();
+
+          const rect = row.getBoundingClientRect();
+          const mid = rect.top + rect.height/2;
+          const pos = (e.clientY < mid) ? "before" : "after";
+
+          if (folderDropEl && folderDropEl !== row){
+            folderDropEl.classList.remove("drop-before","drop-after");
+          }
+          folderDropEl = row;
+          folderDropPos = pos;
+          row.classList.toggle("drop-before", pos === "before");
+          row.classList.toggle("drop-after", pos === "after");
+          e.dataTransfer.dropEffect = "move";
+        });
+
+        row.addEventListener("drop", (e) => {
+          if (!folderDragId) return;
+          if (f.id === FOLDER_UNFILED_ID) return;
+          e.preventDefault();
+          reorderFolders(folderDragId, f.id, folderDropPos);
+          folderDragId = null;
+          clearFolderDropIndicator();
+        });
+
+        const rename = document.createElement("button");
+        rename.type = "button";
+        rename.className = "btn small";
+        rename.textContent = "名前変更";
+        rename.disabled = (f.id === FOLDER_UNFILED_ID);
+        rename.title = rename.disabled ? "未分類は固定です" : "名前変更";
+        rename.addEventListener("click", () => renameFolder(f.id));
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "btn small danger";
+        del.textContent = "削除";
+        del.disabled = (f.id === FOLDER_UNFILED_ID);
+        del.title = del.disabled ? "未分類は削除できません" : "削除（中身は未分類へ移動）";
+        del.addEventListener("click", () => deleteFolder(f.id));
+
+        right.appendChild(handle);
+        right.appendChild(rename);
+        right.appendChild(del);
+
+        row.appendChild(left);
+        row.appendChild(right);
+        folderListEl.appendChild(row);
+      }
+    }
+
+    function createFolder(){
+      const db = readFolderDB();
+      const name0 = (prompt("フォルダ名を入力してください", "") ?? "").trim();
+      if (!name0){ showToast("キャンセル"); return; }
+
+      const existing = new Set(db.folders.map(f=>f.name));
+      const finalName = uniqueName(existing, name0, "フォルダ");
+
+      const maxOrder = Math.max(0, ...db.folders.filter(f=>f.id!==FOLDER_UNFILED_ID).map(f=>Number.isFinite(f.order)?f.order:0));
+      db.folders.push({
+        id: uuid(),
+        name: finalName,
+        createdAt: nowISO(),
+        updatedAt: nowISO(),
+        order: maxOrder + 10
+      });
+      writeFolderDB(db);
+      repairFolderOrders();
+
+      renderFolderFilterSelect();
+      renderSceneFolderSelect();
+      renderFolderManagerList();
+      scheduleRenderSceneList();
+      showToast(`フォルダ作成: ${finalName}`);
+    }
+
+    function renameFolder(folderId){
+      if (folderId === FOLDER_UNFILED_ID) return;
+      const db = readFolderDB();
+      const folder = db.folders.find(f => f.id === folderId);
+      if (!folder) return;
+
+      const name0 = (prompt("新しいフォルダ名を入力してください", folder.name) ?? "").trim();
+      if (!name0){ showToast("キャンセル"); return; }
+
+      const existing = new Set(db.folders.filter(f=>f.id!==folderId).map(f=>f.name));
+      const finalName = uniqueName(existing, name0, "フォルダ");
+      folder.name = finalName;
+      folder.updatedAt = nowISO();
+      writeFolderDB(db);
+
+      renderFolderFilterSelect();
+      renderSceneFolderSelect();
+      renderFolderManagerList();
+      scheduleRenderSceneList();
+      showToast("フォルダ名を変更しました");
+    }
+
+    function deleteFolder(folderId){
+      if (folderId === FOLDER_UNFILED_ID) return;
+
+      const fdb = readFolderDB();
+      const folder = fdb.folders.find(f => f.id === folderId);
+      if (!folder) return;
+
+      const ok = confirm(`フォルダ「${folder.name}」を削除しますか？\n中のシーンは未分類に移動します。`);
+      if (!ok) return;
+
+      const db = readSceneDB();
+      const fset = folderSet();
+
+      const moved = db.scenes
+        .filter(s => safeFolderId(s.folderId, fset) === folderId)
+        .sort((a,b)=> (Number.isFinite(a.order)?a.order:1e18) - (Number.isFinite(b.order)?b.order:1e18));
+
+      for (const s of moved){
+        s.folderId = FOLDER_UNFILED_ID;
+      }
+
+      const unfiledList = db.scenes
+        .filter(s => safeFolderId(s.folderId, fset) === FOLDER_UNFILED_ID)
+        .sort((a,b)=> (Number.isFinite(a.order)?a.order:1e18) - (Number.isFinite(b.order)?b.order:1e18));
+
+      let ord = 10;
+      for (const s of unfiledList){
+        s.order = ord;
+        ord += 10;
+      }
+
+      writeSceneDB(db);
+
+      fdb.folders = fdb.folders.filter(f => f.id !== folderId);
+      writeFolderDB(fdb);
+      repairFolderOrders();
+
+      delete folderCollapseMap[folderId];
+      saveFolderCollapseMap();
+
+      if (searchScopeFolderId === folderId){
+        setSearchScope("");
+      }
+
+      if (folderFilterId === folderId){
+        folderFilterId = "ALL";
+        localStorage.setItem(LS_UI_FOLDER_FILTER, folderFilterId);
+      }
+      if (newSceneFolderId === folderId){
+        newSceneFolderId = FOLDER_UNFILED_ID;
+        localStorage.setItem(LS_UI_NEW_SCENE_FOLDER, newSceneFolderId);
+      }
+
+      renderFolderFilterSelect();
+      renderSceneFolderSelect();
+      renderFolderManagerList();
+      scheduleRenderSceneList();
+      showToast(`削除しました（未分類へ ${moved.length}件移動）`);
+    }
+
+    // =========================
+    // UI: Library drawer/compact
+    // =========================
+    function isMobile(){
+      return window.matchMedia("(max-width: 980px)").matches;
+    }
+    function effectiveCollapsed(){
+      return collapsedPref || isMobile();
+    }
+    function setLibraryOpen(open){
+      if (!document.body.classList.contains("lib-collapsed")) return;
+      document.body.classList.toggle("lib-open", !!open);
+      updateLibraryToggleLabel();
+      if (open) setTimeout(() => search.focus(), 0);
+    }
+    function updateLibraryToggleLabel(){
+      const collapsed = document.body.classList.contains("lib-collapsed");
+      if (!collapsed){
+        libraryToggle.textContent = "一覧を隠す";
+        return;
+      }
+      const open = document.body.classList.contains("lib-open");
+      libraryToggle.textContent = open ? "一覧を閉じる" : "一覧を開く";
+    }
+    function applyLibraryLayout(){
+      document.body.classList.toggle("is-mobile", isMobile());
+      document.body.classList.toggle("compact", !!compactPref);
+
+      const collapsed = effectiveCollapsed();
+      document.body.classList.toggle("lib-collapsed", collapsed);
+
+      if (!collapsed) document.body.classList.remove("lib-open");
+
+      updateLibraryToggleLabel();
+
+      compactToggle.checked = !!compactPref;
+      favPinToggle.checked = !!favPinPref;
+      favOnlyToggle.checked = !!favOnlyPref;
+
+      if (!["manual","updated","name"].includes(sortMode)) sortMode = "manual";
+      sortSelect.value = sortMode;
+
+      renderFolderFilterSelect();
+      renderSceneFolderSelect();
+      updateFolderChunkControls();
+      updateLibraryHint();
+    }
+
+    libraryToggle.addEventListener("click", () => {
+      const collapsed = document.body.classList.contains("lib-collapsed");
+
+      if (!collapsed && !isMobile()){
+        collapsedPref = true;
+        localStorage.setItem(LS_UI_COLLAPSED, "1");
+        applyLibraryLayout();
+        showToast("一覧を隠しました");
+        return;
+      }
+
+      const open = document.body.classList.contains("lib-open");
+      setLibraryOpen(!open);
+    });
+
+    backdrop.addEventListener("click", () => setLibraryOpen(false));
+    libraryClose.addEventListener("click", () => setLibraryOpen(false));
+
+    libraryDock.addEventListener("click", () => {
+      if (isMobile()) return;
+      collapsedPref = false;
+      localStorage.setItem(LS_UI_COLLAPSED, "0");
+      applyLibraryLayout();
+      showToast("一覧を固定表示に戻しました");
+    });
+
+    compactToggle.addEventListener("change", () => {
+      compactPref = !!compactToggle.checked;
+      localStorage.setItem(LS_UI_COMPACT, compactPref ? "1" : "0");
+      applyLibraryLayout();
+      scheduleRenderSceneList();
+    });
+
+    favPinToggle.addEventListener("change", () => {
+      favPinPref = !!favPinToggle.checked;
+      localStorage.setItem(LS_UI_FAV_PIN, favPinPref ? "1" : "0");
+      scheduleRenderSceneList();
+    });
+
+    favOnlyToggle.addEventListener("change", () => {
+      favOnlyPref = !!favOnlyToggle.checked;
+      localStorage.setItem(LS_UI_FAV_ONLY, favOnlyPref ? "1" : "0");
+      scheduleRenderSceneList();
+    });
+
+    sortSelect.addEventListener("change", () => {
+      sortMode = sortSelect.value;
+      localStorage.setItem(LS_UI_SORT, sortMode);
+      scheduleRenderSceneList();
+    });
+
+    folderFilter.addEventListener("change", () => {
+      folderFilterId = folderFilter.value;
+      localStorage.setItem(LS_UI_FOLDER_FILTER, folderFilterId);
+
+      // 絞り込みに入ったら、フォルダ限定検索は意味が重複するので解除（混乱防止）
+      if (folderFilterId !== "ALL"){
+        setSearchScope("");
+      }
+
+      if (folderFilterId !== "ALL"){
+        newSceneFolderId = folderFilterId;
+        localStorage.setItem(LS_UI_NEW_SCENE_FOLDER, newSceneFolderId);
+      }
+
+      scheduleRenderSceneList();
+    });
+
+    folderManage.addEventListener("click", openFolderDialog);
+    folderDialogCloseBtn.addEventListener("click", closeFolderDialog);
+    folderNewBtn.addEventListener("click", createFolder);
+
+    folderCollapseAllBtn.addEventListener("click", () => {
+      if (!(isFolderChunkMode() && search.value.trim() === "")) return;
+      setAllFoldersCollapsed(true);
+      scheduleRenderSceneList();
+      showToast("全フォルダを折りたたみました");
+    });
+    folderExpandAllBtn.addEventListener("click", () => {
+      if (!(isFolderChunkMode() && search.value.trim() === "")) return;
+      setAllFoldersCollapsed(false);
+      scheduleRenderSceneList();
+      showToast("全フォルダを展開しました");
+    });
+
+    window.addEventListener("resize", () => {
+      applyLibraryLayout();
+      if (isMobile()) setLibraryOpen(false);
+    });
+
+    function closeDrawerIfCollapsed(){
+      if (document.body.classList.contains("lib-collapsed")) setLibraryOpen(false);
+    }
+
+    // =========================
+    // Scene editor: bind/load/save
+    // =========================
     function bindSceneEditorTo(id){
       boundSceneId = id;
       scene.dataset.boundSceneId = (id ?? "");
@@ -776,6 +2631,8 @@
       const saveBtn = $("sceneSave");
       const saveAsBtn = $("sceneSaveAs");
 
+      renderSceneFolderSelect();
+
       if (currentSceneId === null){
         currentSceneNameBadge.textContent = "新規";
         const hasText = (scene.value ?? "").length > 0;
@@ -783,9 +2640,12 @@
         $("sceneRevert").style.display = "none";
         deleteSceneBtn.disabled = true;
 
-        // ラベル
         saveBtn.textContent = "保存";
         saveAsBtn.textContent = "名前を付けて保存";
+
+        sceneFavBtn.disabled = true;
+        sceneFavBtn.textContent = "☆";
+        sceneFavBtn.classList.remove("active");
         return;
       }
 
@@ -799,10 +2659,14 @@
       $("sceneRevert").style.display = dirty ? "inline-flex" : "none";
       deleteSceneBtn.disabled = false;
 
-      // ラベル：編集していたら「更新」
       saveBtn.textContent = dirty ? "更新" : "保存";
-      // 既存を開いているなら「複製して保存」
       saveAsBtn.textContent = "複製して保存";
+
+      sceneFavBtn.disabled = false;
+      const isFav = !!s?.fav;
+      sceneFavBtn.textContent = isFav ? "★" : "☆";
+      sceneFavBtn.classList.toggle("active", isFav);
+      sceneFavBtn.title = isFav ? "お気に入り解除" : "お気に入りに追加";
     }
 
     function commitSceneDraftForBound(){
@@ -822,6 +2686,9 @@
       currentSceneId = id;
       localStorage.setItem(LS_SCENE_SELECTED_ID, id);
 
+      expandFolderForSceneId(id);
+      scrollToActiveNext = true;
+
       scene.value = loadSceneText(db, id);
 
       requestAnimationFrame(() => {
@@ -830,6 +2697,7 @@
         switchingFromSceneId = null;
         updateSceneUI();
         scheduleRenderSceneList();
+        closeDrawerIfCollapsed();
         showToast("シーンを呼び出しました");
       });
     }
@@ -854,7 +2722,14 @@
         switchingFromSceneId = null;
         updateSceneUI();
         scheduleRenderSceneList();
-        showToast("新規シーン");
+        closeDrawerIfCollapsed();
+
+        if (nextNewSceneToast){
+          showToast(nextNewSceneToast);
+          nextNewSceneToast = "";
+        } else {
+          showToast("新規シーン");
+        }
       });
     }
 
@@ -863,9 +2738,8 @@
 
       const db = readSceneDB();
 
-      // 新規は「保存」= 名前を聞いて保存
       if (currentSceneId === null){
-        saveSceneAs(); // 名前を付けて保存
+        saveSceneAs();
         return;
       }
 
@@ -875,7 +2749,6 @@
       const nextText = scene.value ?? "";
       const prevText = s.text ?? "";
 
-      // ★変更がないなら更新日時を変えない（勝手に先頭へ行かない）
       if (nextText === prevText){
         clearSceneDraft(currentSceneId);
         updateSceneUI();
@@ -884,7 +2757,6 @@
         return;
       }
 
-      // ✅ IDで特定した1件だけ更新
       s.text = nextText;
       s.updatedAt = nowISO();
 
@@ -910,30 +2782,43 @@
       const name0 = (prompt("保存名を入力してください（シーン）", suggestion) ?? "").trim();
       if (!name0){ showToast("キャンセル"); return; }
 
-      // ★同名なら必ず連番で“新規”を作る（上書きしない）
-      const finalName = uniqueName(existingNames, name0);
+      const finalName = uniqueName(existingNames, name0, "scene");
 
-      const id = uuid();
-      db.scenes.push({
-        id,
+      const fset = folderSet();
+      const chosenFolderId = safeFolderId(sceneFolderSelect.value, fset);
+
+      const newObj = normalizeSceneObj({
+        id: uuid(),
         name: finalName,
         text: scene.value ?? "",
         createdAt: nowISO(),
-        updatedAt: nowISO()
+        updatedAt: nowISO(),
+        fav: false,
+        folderId: chosenFolderId,
+        order: NaN
       });
+
+      const afterId =
+        (currentSceneId !== null && (findSceneById(db, currentSceneId)?.folderId ?? "") === chosenFolderId)
+          ? currentSceneId
+          : null;
+
+      insertNewSceneIntoFolder(db, newObj, afterId);
 
       writeSceneDB(db);
       clearSceneDraft(null);
 
-      currentSceneId = id;
-      localStorage.setItem(LS_SCENE_SELECTED_ID, id);
-      bindSceneEditorTo(id);
+      currentSceneId = newObj.id;
+      localStorage.setItem(LS_SCENE_SELECTED_ID, newObj.id);
+      bindSceneEditorTo(newObj.id);
+
+      expandFolderForSceneId(newObj.id);
+      scrollToActiveNext = true;
 
       updateSceneUI();
       scheduleRenderSceneList();
 
-      if (finalName !== name0) showToast(`「${finalName}」として複製しました`);
-      else showToast("名前を付けて保存しました");
+      showToast(finalName !== name0 ? `「${finalName}」として複製しました` : "名前を付けて保存しました");
     }
 
     function revertScene(){
@@ -958,9 +2843,19 @@
       const ok = confirm(`「${s.name}」を削除しますか？（元に戻せません）`);
       if (!ok) return;
 
+      const fset = folderSet();
+      const fid = safeFolderId(s.folderId, fset);
+
       db.scenes = db.scenes.filter(x => x.id !== currentSceneId);
       writeSceneDB(db);
       clearSceneDraft(currentSceneId);
+
+      const remaining = db.scenes
+        .filter(x => safeFolderId(x.folderId, fset) === fid)
+        .sort((a,b)=> (Number.isFinite(a.order)?a.order:1e18) - (Number.isFinite(b.order)?b.order:1e18));
+      let ord = 10;
+      for (const x of remaining){ x.order = ord; ord += 10; }
+      writeSceneDB(db);
 
       currentSceneId = null;
       localStorage.setItem(LS_SCENE_SELECTED_ID, "");
@@ -972,7 +2867,6 @@
       showToast("削除しました");
     }
 
-    // Input -> draft (with switching guard)
     scene.addEventListener("input", () => {
       const targetId = switchingScene ? switchingFromSceneId : boundSceneId;
       setSceneDraft(targetId, scene.value ?? "");
@@ -980,8 +2874,27 @@
       scheduleRenderSceneList();
     });
 
+    sceneFavBtn.addEventListener("click", () => {
+      if (currentSceneId === null) return;
+      toggleSceneFavorite(currentSceneId);
+    });
+
+    sceneFolderSelect.addEventListener("change", () => {
+      const fset = folderSet();
+      const fid = safeFolderId(sceneFolderSelect.value, fset);
+
+      if (currentSceneId === null){
+        newSceneFolderId = fid;
+        localStorage.setItem(LS_UI_NEW_SCENE_FOLDER, newSceneFolderId);
+        showToast("新規の保存先フォルダを変更");
+        return;
+      }
+
+      moveSceneToFolder(currentSceneId, fid);
+    });
+
     // =========================
-    // Fixed Presets (name based)
+    // Fixed presets
     // =========================
     function readFixedLib(){
       try{
@@ -1060,9 +2973,7 @@
       fixedDirtyBadge.style.display = dirty ? "inline-flex" : "none";
       $("fixedRevert").style.display = dirty ? "inline-flex" : "none";
 
-      // ラベル：編集していたら「更新」
       $("fixedSave").textContent = dirty ? "更新" : "保存";
-      // 固定は常に既存プリセットなので、常に「複製して保存」
       $("fixedSaveAs").textContent = "複製して保存";
 
       const count = Object.keys(lib).length;
@@ -1097,7 +3008,6 @@
       const prev = String(lib[currentFixedName]?.text ?? "");
       const next = fixed.value ?? "";
 
-      // ★変更がないなら更新日時を変えない
       if (next === prev){
         clearFixedDraft(currentFixedName);
         updateFixedUI();
@@ -1120,7 +3030,7 @@
       if (!name0){ showToast("キャンセル"); return; }
 
       const existingNames = new Set(Object.keys(lib));
-      const finalName = uniqueName(existingNames, name0); // ★同名なら（2）（3）…
+      const finalName = uniqueName(existingNames, name0, "固定");
 
       lib[finalName] = { text: fixed.value ?? "", updatedAt: nowISO() };
       writeFixedLib(lib);
@@ -1131,9 +3041,7 @@
 
       renderFixedSelect();
       updateFixedUI();
-
-      if (finalName !== name0) showToast(`「${finalName}」として複製しました`);
-      else showToast("複製して保存しました");
+      showToast(finalName !== name0 ? `「${finalName}」として複製しました` : "複製して保存しました");
     }
     function revertFixed(){
       const lib = readFixedLib();
@@ -1193,9 +3101,10 @@
     // =========================
     $("exportJson").addEventListener("click", () => {
       const data = {
-        version: 3,
+        version: 8,
         exportedAt: nowISO(),
-        scenesDB: readSceneDB(),
+        foldersDB: { version: 2, folders: readFolderDB().folders },
+        scenesDB: { version: 2, scenes: readSceneDB().scenes },
         fixedPresets: readFixedLib()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -1217,55 +3126,75 @@
         const text = await file.text();
         const obj = JSON.parse(text);
 
-        // scenes
-        if (obj?.scenesDB?.scenes && Array.isArray(obj.scenesDB.scenes)){
-          const db = readSceneDB();
-          const existingIds = new Set(db.scenes.map(s=>s.id));
-          const existingNames = new Set(db.scenes.map(s=>s.name));
+        if (obj?.foldersDB?.folders && Array.isArray(obj.foldersDB.folders)){
+          const cur = readFolderDB();
+          const existingIds = new Set(cur.folders.map(f=>f.id));
+          const existingNames = new Set(cur.folders.map(f=>f.name));
 
-          for (const s of obj.scenesDB.scenes){
-            const name0 = String(s?.name ?? "scene");
-            const id0 = String(s?.id ?? "");
+          for (const f of obj.foldersDB.folders){
+            const id0 = String(f?.id ?? "");
+            const name0 = String(f?.name ?? "").trim();
+            if (!name0) continue;
+            if (id0 === FOLDER_UNFILED_ID) continue;
+
             const id = (id0 && !existingIds.has(id0)) ? id0 : uuid();
-            const name = existingNames.has(name0) ? uniqueName(existingNames, name0) : name0;
+            const name = existingNames.has(name0) ? uniqueName(existingNames, name0, "フォルダ") : name0;
 
             existingIds.add(id);
             existingNames.add(name);
 
-            db.scenes.push({
+            cur.folders.push({
+              id,
+              name,
+              createdAt: f?.createdAt ?? nowISO(),
+              updatedAt: f?.updatedAt ?? nowISO(),
+              order: asNum(f?.order)
+            });
+          }
+
+          if (!cur.folders.some(f => f.id === FOLDER_UNFILED_ID)){
+            cur.folders.unshift({ id: FOLDER_UNFILED_ID, name: "未分類", createdAt: nowISO(), updatedAt: nowISO(), order: 0 });
+          }
+          writeFolderDB(cur);
+          repairFolderOrders();
+        }
+
+        if (obj?.scenesDB?.scenes && Array.isArray(obj.scenesDB.scenes)){
+          const db = readSceneDB();
+          const existingIds = new Set(db.scenes.map(s=>s.id));
+          const existingNames = new Set(db.scenes.map(s=>s.name));
+          const fset = folderSet();
+
+          for (const s of obj.scenesDB.scenes){
+            const id0 = String(s?.id ?? "");
+            const name0 = String(s?.name ?? "scene");
+            const id = (id0 && !existingIds.has(id0)) ? id0 : uuid();
+            const name = existingNames.has(name0) ? uniqueName(existingNames, name0, "scene") : name0;
+
+            existingIds.add(id);
+            existingNames.add(name);
+
+            db.scenes.push(normalizeSceneObj({
               id,
               name,
               text: String(s?.text ?? ""),
               createdAt: String(s?.createdAt ?? nowISO()),
-              updatedAt: String(s?.updatedAt ?? nowISO())
-            });
+              updatedAt: String(s?.updatedAt ?? nowISO()),
+              fav: !!s?.fav,
+              folderId: safeFolderId(String(s?.folderId ?? FOLDER_UNFILED_ID), fset),
+              order: asNum(s?.order)
+            }));
           }
+
           writeSceneDB(db);
-        } else if (obj?.scenes && typeof obj.scenes === "object"){
-          // old style: { name: {text, updatedAt} }
-          const db = readSceneDB();
-          const existingNames = new Set(db.scenes.map(s=>s.name));
-          for (const [name0, payload] of Object.entries(obj.scenes)){
-            const name = uniqueName(existingNames, String(name0));
-            existingNames.add(name);
-            db.scenes.push({
-              id: uuid(),
-              name,
-              text: String(payload?.text ?? ""),
-              createdAt: String(payload?.createdAt ?? payload?.updatedAt ?? nowISO()),
-              updatedAt: String(payload?.updatedAt ?? nowISO())
-            });
-          }
-          writeSceneDB(db);
+          repairSceneFolderAndOrders();
         }
 
-        // fixed
         if (obj?.fixedPresets && typeof obj.fixedPresets === "object"){
           const lib = readFixedLib();
           for (const [name, payload] of Object.entries(obj.fixedPresets)){
-            // インポート時は同名衝突を連番で回避
             const existingNames = new Set(Object.keys(lib));
-            const finalName = existingNames.has(name) ? uniqueName(existingNames, name) : name;
+            const finalName = existingNames.has(name) ? uniqueName(existingNames, name, "固定") : name;
             lib[finalName] = { text: String(payload?.text ?? ""), updatedAt: payload?.updatedAt ?? nowISO() };
           }
           writeFixedLib(lib);
@@ -1314,7 +3243,11 @@
       showToast(ok ? "コピーしました" : "コピーに失敗しました");
     });
 
-    $("newScene").addEventListener("click", newScene);
+    $("newScene").addEventListener("click", () => {
+      nextNewSceneToast = "";
+      newScene();
+    });
+
     $("deleteScene").addEventListener("click", deleteScene);
     $("sceneSave").addEventListener("click", saveScene);
     $("sceneSaveAs").addEventListener("click", saveSceneAs);
@@ -1327,7 +3260,31 @@
       showToast("シーン入力をクリア");
     });
 
-    search.addEventListener("input", scheduleRenderSceneList);
+    search.addEventListener("input", () => {
+      // 限定検索中は「見えない」事故を減らすため、対象フォルダを展開
+      if (search.value.trim() !== "" && hasSearchScope() && folderCollapseMap[searchScopeFolderId]){
+        delete folderCollapseMap[searchScopeFolderId];
+        saveFolderCollapseMap();
+      }
+      scheduleRenderSceneList();
+    });
+
+    clearSearchBtn.addEventListener("click", () => {
+      if (!search.value) return;
+      search.value = "";
+      scheduleRenderSceneList();
+      search.focus();
+      showToast("検索をクリア");
+    });
+
+    searchScopeBadge.addEventListener("click", () => {
+      if (!hasSearchScope()) return;
+      setSearchScope("");
+      scheduleRenderSceneList();
+      search.focus();
+      search.select();
+      showToast("検索の限定を解除");
+    });
 
     fixedSelect.addEventListener("change", () => selectFixed(fixedSelect.value));
     $("openFixed").addEventListener("click", () => { fixedDetails.open = true; fixed.focus(); });
@@ -1347,8 +3304,15 @@
       dividerCustom.style.display = dividerPreset.value === "CUSTOM" ? "block" : "none";
     });
 
-    // Keyboard shortcuts
+    // Ctrl shortcuts
     document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey && (e.key === "k" || e.key === "K")){
+        e.preventDefault();
+        if (document.body.classList.contains("lib-collapsed")) setLibraryOpen(true);
+        search.focus();
+        search.select();
+        return;
+      }
       if (e.ctrlKey && e.key === "Enter"){
         e.preventDefault();
         doMergeCopy();
@@ -1364,6 +3328,21 @@
           if (inFixed) saveFixed();
           else saveScene();
         }
+        return;
+      }
+      if (e.key === "Escape"){
+        if (document.activeElement === search && search.value.trim() !== ""){
+          e.preventDefault();
+          search.value = "";
+          scheduleRenderSceneList();
+          showToast("検索をクリア");
+          return;
+        }
+        if (document.body.classList.contains("lib-collapsed") && document.body.classList.contains("lib-open")){
+          e.preventDefault();
+          setLibraryOpen(false);
+          return;
+        }
       }
     });
 
@@ -1371,32 +3350,39 @@
     // Init
     // =========================
     function init(){
-      // defaults
       dividerPreset.value = "\n\n";
       dividerCustom.value = "";
       dividerCustom.style.display = "none";
       trim.checked = true;
 
-      // migrate old scenes (once)
-      migrateOldScenesIfNeeded();
+      ensureDefaultFolders();
+      repairFolderOrders();
 
-      // load scene selection
+      migrateVeryOldScenesIfNeeded();
+      repairSceneFolderAndOrders();
+
+      folderCollapseMap = loadFolderCollapseMap();
+      sanitizeFolderCollapseMap();
+
+      sanitizeSearchScope();
+
+      applyLibraryLayout();
+
       const db = readSceneDB();
       const sel = localStorage.getItem(LS_SCENE_SELECTED_ID) ?? "";
       if (sel && findSceneById(db, sel)){
         currentSceneId = sel;
+        expandFolderForSceneId(sel);
       } else {
         currentSceneId = null;
       }
 
-      // bind editor and load text
       scene.value = loadSceneText(db, currentSceneId);
       bindSceneEditorTo(currentSceneId);
 
       updateSceneUI();
       renderSceneList();
 
-      // fixed
       ensureFixedDefault();
       const lib = readFixedLib();
       const names = sortedFixedNames(lib);
@@ -1409,7 +3395,6 @@
       renderFixedSelect();
       updateFixedUI();
 
-      // output
       refreshOutput();
     }
 
