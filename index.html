@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>プロンプト合体（極限UX版：フォルダ見出し/折りたたみ/フォルダ別手動順/★/DnD/フォルダ新規/フォルダ限定検索）</title>
+  <title>プロンプト合体</title>
   <style>
     :root{
       --bg:#f6f7fb;
@@ -180,6 +180,10 @@
       max-height: min(560px, calc(100vh - 380px));
       overflow:auto;
       padding-right: 2px;
+
+      /* mobile scroll feel */
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     .sublist{
       display:flex; flex-direction:column;
@@ -481,6 +485,7 @@
       pointer-events: none;
       transition: .18s ease;
       z-index: 1400;
+      touch-action: none;
     }
 
     body.lib-collapsed .layout{ grid-template-columns: 1fr; }
@@ -540,6 +545,8 @@
       max-height: min(520px, 70vh);
       overflow:auto;
       padding-right: 2px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     .folderRow{
       border:1px solid var(--line);
@@ -930,6 +937,30 @@
 
     // new-scene toast override
     let nextNewSceneToast = "";
+
+    // ===== Mobile scroll lock (background) =====
+    let bodyScrollLocked = false;
+    let bodyScrollLockY = 0;
+    function lockBodyScroll(){
+      if (bodyScrollLocked) return;
+      bodyScrollLocked = true;
+      bodyScrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${bodyScrollLockY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+    }
+    function unlockBodyScroll(){
+      if (!bodyScrollLocked) return;
+      bodyScrollLocked = false;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      window.scrollTo(0, bodyScrollLockY);
+    }
 
     // ---- Utils ----
     function showToast(msg){
@@ -2474,12 +2505,48 @@
     function effectiveCollapsed(){
       return collapsedPref || isMobile();
     }
+
+    // drawer open時：スマホは「勝手にキーボードを出さない」「背景スクロールを止める」「選択中が見える位置へ」
+    function ensureDrawerScrollOnOpen(){
+      const container = sceneList;
+      if (!container) return;
+
+      const active = container.querySelector(".sceneItem.active");
+      if (!active){
+        container.scrollTop = 0;
+        return;
+      }
+
+      const cRect = container.getBoundingClientRect();
+      const aRect = active.getBoundingClientRect();
+      const fullyVisible = (aRect.top >= cRect.top) && (aRect.bottom <= cRect.bottom);
+
+      if (!fullyVisible){
+        active.scrollIntoView({ block: "center" });
+      }
+    }
+
     function setLibraryOpen(open){
       if (!document.body.classList.contains("lib-collapsed")) return;
+
       document.body.classList.toggle("lib-open", !!open);
       updateLibraryToggleLabel();
+
+      if (isMobile()){
+        if (open){
+          lockBodyScroll();
+          // transition後に視界を整える（PCには影響なし）
+          setTimeout(() => ensureDrawerScrollOnOpen(), 220);
+        } else {
+          unlockBodyScroll();
+        }
+        return;
+      }
+
+      // PC/タブレット（非モバイル）：従来通り、開いたら検索へフォーカス
       if (open) setTimeout(() => search.focus(), 0);
     }
+
     function updateLibraryToggleLabel(){
       const collapsed = document.body.classList.contains("lib-collapsed");
       if (!collapsed){
@@ -2489,6 +2556,7 @@
       const open = document.body.classList.contains("lib-open");
       libraryToggle.textContent = open ? "一覧を閉じる" : "一覧を開く";
     }
+
     function applyLibraryLayout(){
       document.body.classList.toggle("is-mobile", isMobile());
       document.body.classList.toggle("compact", !!compactPref);
@@ -2497,6 +2565,9 @@
       document.body.classList.toggle("lib-collapsed", collapsed);
 
       if (!collapsed) document.body.classList.remove("lib-open");
+
+      // レイアウト都合で閉じられた場合はロック解除
+      if (!document.body.classList.contains("lib-open")) unlockBodyScroll();
 
       updateLibraryToggleLabel();
 
@@ -2598,9 +2669,23 @@
       showToast("全フォルダを展開しました");
     });
 
+    // ★重要：キーボード表示のresizeで閉じない（スマホの「一覧を開く」が無反応に見える原因）
+    let prevIsMobile = isMobile();
     window.addEventListener("resize", () => {
+      const nowIsMobile = isMobile();
       applyLibraryLayout();
-      if (isMobile()) setLibraryOpen(false);
+
+      // デスクトップ→モバイル境界を跨いだときだけ閉じる（キーボードresizeは無視）
+      if (!prevIsMobile && nowIsMobile){
+        setLibraryOpen(false);
+      }
+
+      // モバイル→デスクトップに戻ったら確実に解除
+      if (prevIsMobile && !nowIsMobile){
+        unlockBodyScroll();
+      }
+
+      prevIsMobile = nowIsMobile;
     });
 
     function closeDrawerIfCollapsed(){
@@ -3101,7 +3186,7 @@
     // =========================
     $("exportJson").addEventListener("click", () => {
       const data = {
-        version: 8,
+        version: 9,
         exportedAt: nowISO(),
         foldersDB: { version: 2, folders: readFolderDB().folders },
         scenesDB: { version: 2, scenes: readSceneDB().scenes },
